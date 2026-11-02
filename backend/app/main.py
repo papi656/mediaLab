@@ -112,11 +112,11 @@ def _mount_spa(app: FastAPI, static_dir: Path | None) -> None:
         return
 
     if (dist / "assets").is_dir():
-        app.mount("/static", StaticFiles(directory=dist / "assets"), name="static")
+        app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def spa(full_path: str):
-        if full_path.startswith(("api/", "static/")):
+        if full_path.startswith(("api/", "assets/")):
             return JSONResponse({"detail": "not found"}, status_code=404)
         candidate = dist / full_path
         if full_path and candidate.is_file():

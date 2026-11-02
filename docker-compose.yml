@@ -1,0 +1,15 @@
+services:
+  medialab:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+      STATIC_DIR: /app/static
+    ports:
+      - "8000:8000"
+    volumes:
+      - medialab-data:/data
+
+volumes:
+  medialab-data:

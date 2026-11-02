@@ -70,9 +70,11 @@ class FakeProvider(ImageProvider):
         if self._latency_ms:
             time.sleep(self._latency_ms / 1000)
 
-        if self._fail:
+        # `self._fail` (FAKE_FAIL=1) fails everything; "[fail]" in the prompt lets an
+        # end-to-end test exercise the failure path without a second server.
+        if self._fail or "[fail]" in req.prompt:
             raise ProviderError(
-                "Fake provider failure (FAKE_FAIL=1)",
+                "Fake provider failure (requested)",
                 {"fake": True, "model": req.model},
             )
 

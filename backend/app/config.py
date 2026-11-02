@@ -4,6 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -43,6 +44,14 @@ class Settings(BaseSettings):
     # --- fake provider --------------------------------------------------
     fake_latency_ms: int = 50
     fake_fail: bool = False
+
+    @field_validator("daily_budget_usd", "static_dir", mode="before")
+    @classmethod
+    def _blank_is_none(cls, value):
+        """An env var set to the empty string means "unset", not "zero" or "cwd"."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @property
     def assets_dir(self) -> Path:
