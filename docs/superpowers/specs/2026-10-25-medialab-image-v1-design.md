@@ -141,6 +141,7 @@ Rules:
 - Picking a model that cannot do X removes X from the request, never sends an ignored field.
 - Updating the catalogue is a developer action, not an endpoint: `python -m scripts.gen_capabilities` rewrites the file, then review and commit the diff. No `refresh` query parameter.
 - `GET /api/models` is cached in process for the lifetime of the process (the file cannot change without a restart).
+- Frontend types are **generated from the backend's OpenAPI schema** (`openapi-typescript` into `src/lib/api-types.ts`, refreshed by an `npm run gen:types` script) so the catalogue shape cannot drift between Python and TypeScript.
 
 ## 6. Request normalization
 
