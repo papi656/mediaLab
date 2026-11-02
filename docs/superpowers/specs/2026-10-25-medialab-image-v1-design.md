@@ -68,8 +68,11 @@ Generic by design so video is additive, not a migration.
 | `n_requested` | int | providers may return fewer |
 | `n_received` | int? | |
 | `created_at` / `started_at` / `finished_at` | datetime | UTC |
+| `deleted_at` | datetime? | soft delete; null = live |
 
-Index on `(created_at desc)` and `(status)`.
+Index on `(created_at desc)`, `(status)`, `(deleted_at)`.
+
+Every read path filters `deleted_at IS NULL`. There is one helper (`live_jobs()`) and every query goes through it, so a forgotten filter is not possible.
 
 ### `assets`
 
@@ -85,6 +88,8 @@ Index on `(created_at desc)` and `(status)`.
 | `width` / `height` | int? | null for SVG or if unknown |
 | `source` | text | `provider` \| `upload` \| `fake` |
 | `created_at` | datetime | |
+
+Files are **content-addressed and shared**: identical bytes are stored once, so two jobs producing the same image point at the same file. Any deletion must therefore be reference-counted by `sha256`, never by job id. This is the only non-obvious rule in the storage layer.
 
 ### `spend_ledger`
 
@@ -196,6 +201,22 @@ Single operator, real auth on every endpoint.
 - On app startup: any job left `queued`/`running` is marked `interrupted` with error `"server restarted"`. The UI offers "retry" (creates a new job with the same params).
 - Cancellation: `DELETE /api/generations/{id}` sets `cancelled`; the runner checks before and after the provider call (cannot abort an in-flight HTTP request mid-body, and says so in the UI).
 
+### Retention and GC
+
+Deleting is **soft**: `DELETE /api/generations/{id}` sets `deleted_at` and nothing else. The row disappears from History immediately, and `POST /api/generations/{id}/restore` clears the flag — cheap, because nothing was destroyed.
+
+Reclaiming space is a separate, periodic process (`app/gc.py`), run as an `asyncio` loop at startup and every `GC_INTERVAL_HOURS` (default 6), plus exposed as `python -m app.gc --dry-run` for manual inspection.
+
+GC does, in order:
+
+1. **Expired soft deletes** — rows with `deleted_at < now - SOFT_DELETE_RETENTION_DAYS` (default 7).
+2. **Reference-counted file removal** — for each candidate `sha256`, delete the row first, then unlink the file only if no `assets` row still references that hash. A file shared with a live job is never removed.
+3. **Orphaned uploads** — `role = input` assets with `job_id IS NULL` older than 24h (user uploaded, never submitted).
+4. **Orphaned files** — files present on disk with no `assets` row at all (crash recovery).
+5. Emits one structured log line with counts per category.
+
+`--dry-run` reports the same counts without touching anything. GC is idempotent: killing it mid-run leaves a consistent state because rows go before files.
+
 ## 9. Constraints and honesty
 
 - **Single worker.** In-process tasks vanish on restart with more workers. Enforced in the Dockerfile CMD and documented. When this hurts, the fix is a `jobs` table + a separate worker process, not Celery.
@@ -220,7 +241,9 @@ Three surfaces, single-column, light-first, generous whitespace.
 2. **Generate** — left: prompt textarea, model picker (searchable `Command`), dynamic param controls, reference dropzone (conditional). Right: result panel with status, timing, cost, per-image download, and "use as reference" (feeds the asset id back in, one click).
 3. **History** — infinite-scroll grid, filter by model, click → detail; retry, reuse prompt, delete.
 
-Theme: near-white canvas, `new-york` shadcn style, one accent colour. Dark mode is a later toggle, not designed now.
+**Layout and visual design are provisional.** The route structure, the capability-driven form behaviour, and the interaction rules above are settled; the actual layout will be derived from hand-drawn input the user will supply. Until then, build the Generate and History screens with shadcn primitives in a plain single-column arrangement — no bespoke layout work, because it will be replaced.
+
+Delete behaviour in the UI: soft delete with a 5-second **Undo** toast (backed by the restore endpoint), so an accidental delete is never a data loss event.
 
 ## 12. Testing
 
@@ -241,6 +264,7 @@ Because it records the payload, tests assert the **exact** OpenRouter request bo
 - **Unit:** param mapping per model family; `models.json` schema validation + a test asserting every model has sane capabilities (e.g. `max_refs >= 0`, `n.max >= n.min`, no empty `aspect_ratios` when the model supports `aspect_ratio`); auth/JWT; ref-count validation; budget math; passthrough allowlist rejection.
 - **Integration:** `httpx.ASGITransport` against the app with `PROVIDER=fake` and a tmp SQLite DB. Full path per test: login → `/api/models` → upload ref → create job → poll to `succeeded` → `GET /assets/{id}` returns non-empty image bytes → `/api/usage` reflects spend.
 - **Failure paths:** provider error → `failed` with detail; restart mid-job → `interrupted`; refs over cap → 422; unauthenticated → 401; budget exceeded → 429.
+- **Retention/GC:** soft-deleted job vanishes from History but its asset survives; restore brings it back; GC past the retention window drops the row and unlinks the file; **a file shared by a live job is not unlinked** (the refcount test — the one that would silently corrupt data if wrong); `--dry-run` mutates nothing; GC is idempotent when run twice.
 - **Live (opt-in):** `@pytest.mark.live`, deselected by default, `pytest -m live` runs **one** cheap generation against the cheapest model to prove the adapter still matches reality. Requires `OPENROUTER_API_KEY`.
 
 ### Frontend E2E (`Playwright`)
@@ -264,7 +288,7 @@ Fixtures: one deterministic PNG generated in the test setup. No network in E2E.
 - `Dockerfile` — multi-stage: `node:22` build → `python:3.12-slim` runtime, `uvicorn --workers 1 --host 0.0.0.0 --port 8000`.
 - Persistent volume mounted at `/data` (SQLite db, assets, models cache).
 - `HEALTHCHECK` → `GET /health` (no auth, checks DB writability).
-- Env: `OPENROUTER_API_KEY`, `SESSION_SECRET`, `ADMIN_PASSWORD_HASH`, `PROVIDER=openrouter|fake`, `DAILY_BUDGET_USD`, `DATA_DIR` (default `/data`).
+- Env: `OPENROUTER_API_KEY`, `SESSION_SECRET`, `ADMIN_PASSWORD_HASH`, `PROVIDER=openrouter|fake`, `DAILY_BUDGET_USD`, `DATA_DIR` (default `/data`), `SOFT_DELETE_RETENTION_DAYS` (7), `GC_INTERVAL_HOURS` (6), `FAKE_LATENCY_MS` (50).
 - `.env.example` committed; `.env` ignored.
 - Local dev: `PROVIDER=fake` by default so nothing costs money while building.
 
@@ -307,9 +331,12 @@ mediaLab/
 | A | Job schema | Generic `media_jobs` with `kind` + JSON `params`, so video/audio are additive. |
 | B | Model catalogue | Static typed `models.json`, generated offline, served by `GET /api/models`. No runtime fetch. |
 | C | Visibility | Private only. Generation ids are UUIDs anyway, so a public read-only view is additive later. |
+| D | Deletion | Soft delete (`deleted_at`) + periodic reference-counted GC that prunes rows and files. |
+| E | UI | Behaviour settled; layout deferred to hand-drawn input. Build with plain shadcn primitives meanwhile. |
+| F | Sessions | 7-day JWT cookie. |
 
 ## 16. Open questions
 
-1. Confirm the UI direction in §11 (light-first, generous whitespace, one accent) — or was "white / space" referring to something else?
-2. Should `DELETE` of a job also delete its output files, or keep bytes for dedupe (storage is cheap, files are content-addressed)? Default: keep files, delete rows, and add a `data/gc` command later.
-3. Is 7 days the right session length, or do you want "never log out" on your own machine?
+1. `SOFT_DELETE_RETENTION_DAYS` — 7 days before GC removes a deleted job for good. Longer is safer, shorter keeps disk tidy; output images are typically 1–5 MB.
+2. Hand-drawn UI input — needed before any real layout work. Everything else can be built first.
+3. `DAILY_BUDGET_USD` — leave unset (no cap) or pick a number now?
