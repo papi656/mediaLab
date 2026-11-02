@@ -94,7 +94,26 @@ No `users` table. The single operator is defined by env (§7).
 
 ## 5. Capability model (the core of the UI)
 
-`GET /api/models` returns a normalized, cached view of OpenRouter's `/api/v1/images/models`, which already includes per-model `supported_parameters`.
+Model capabilities are a **static, typed, committed config file**, not a runtime fetch. `backend/app/data/models.json` is the single source of truth; `GET /api/models` serves it. It is generated offline from OpenRouter's `/api/v1/images/models` by `backend/scripts/gen_capabilities.py` (a promoted, simplified descendant of `internal-docs/gen-openrouter-image-models.py`).
+
+Why static over live-fetch-and-cache:
+
+- Tests are deterministic and need no network or fixtures.
+- No TTL logic, no cache-miss states, no 503 path in the UI.
+- The form's shape cannot change under the user because OpenRouter added a model mid-session.
+- A model list change becomes a reviewable diff in git.
+
+The cost is staleness — a newly released model is absent until someone runs the generator. That is the correct trade for a single-operator tool.
+
+The file is validated against a Pydantic schema at import time; a malformed or hand-edited file fails at startup, not at request time. It carries `generated_at` and `source` metadata, surfaced in the UI as "catalogue updated <date>".
+
+```jsonc
+{
+  "generated_at": "2026-10-25T10:50:00Z",
+  "source": "https://openrouter.ai/api/v1/images/models",
+  "models": [ { /* ModelCapabilities */ } ]
+}
+```
 
 ```ts
 interface ModelCapabilities {
@@ -120,8 +139,8 @@ Rules:
 - **The form is generated from the selected model's capabilities.** No hardcoded model list, no hardcoded dropdowns.
 - **Reference images appear iff `max_refs > 0`.** Elsewhere the upload control is absent, not disabled.
 - Picking a model that cannot do X removes X from the request, never sends an ignored field.
-- Cache TTL 60 min in process; on fetch failure fall back to `data/models_cache.json` written on every successful fetch. If neither is available, `/api/models` returns 503 and the UI shows a retry state.
-- `GET /api/models?refresh=true` forces a refetch (authenticated, rate-limited to 1/min).
+- Updating the catalogue is a developer action, not an endpoint: `python -m scripts.gen_capabilities` rewrites the file, then review and commit the diff. No `refresh` query parameter.
+- `GET /api/models` is cached in process for the lifetime of the process (the file cannot change without a restart).
 
 ## 6. Request normalization
 
@@ -182,7 +201,7 @@ Single operator, real auth on every endpoint.
 - **Provider URLs expire.** Output is always downloaded/copied server-side; the original URL is never the source of truth.
 - **Providers may return fewer images than `n`.** `n_requested` vs `n_received` is recorded and surfaced.
 - **Some models are single-image only** (31 endpoints reject `n > 1`). The capability data enforces `n.max = 1`.
-- **Pricing changes.** Cached capability data may be stale; the spec does not promise cost accuracy for display, only for recorded spend.
+- **The catalogue is a snapshot.** `models.json` goes stale by design; `generated_at` is shown in the UI. Recorded spend comes from the provider response, never from the catalogue.
 
 ## 10. Cost control
 
@@ -218,7 +237,7 @@ Because it records the payload, tests assert the **exact** OpenRouter request bo
 
 ### Backend (`pytest`)
 
-- **Unit:** param mapping per model family; capability normalization from captured API fixtures; auth/JWT; ref-count validation; budget math; passthrough allowlist rejection.
+- **Unit:** param mapping per model family; `models.json` schema validation + a test asserting every model has sane capabilities (e.g. `max_refs >= 0`, `n.max >= n.min`, no empty `aspect_ratios` when the model supports `aspect_ratio`); auth/JWT; ref-count validation; budget math; passthrough allowlist rejection.
 - **Integration:** `httpx.ASGITransport` against the app with `PROVIDER=fake` and a tmp SQLite DB. Full path per test: login → `/api/models` → upload ref → create job → poll to `succeeded` → `GET /assets/{id}` returns non-empty image bytes → `/api/usage` reflects spend.
 - **Failure paths:** provider error → `failed` with detail; restart mid-job → `interrupted`; refs over cap → 422; unauthenticated → 401; budget exceeded → 429.
 - **Live (opt-in):** `@pytest.mark.live`, deselected by default, `pytest -m live` runs **one** cheap generation against the cheapest model to prove the adapter still matches reality. Requires `OPENROUTER_API_KEY`.
@@ -257,6 +276,8 @@ mediaLab/
 │   ├── app/{main,config,db,models,schemas,auth,capabilities,storage,jobs}.py
 │   ├── app/providers/{base,openrouter,fake}.py
 │   ├── app/routers/{auth,models,generations,assets,usage,health}.py
+│   ├── app/data/models.json          # committed, generated capability catalogue
+│   ├── scripts/gen_capabilities.py   # regenerates models.json from OpenRouter
 │   ├── tests/{unit,integration,live}/
 │   └── pyproject.toml
 ├── frontend/
@@ -282,6 +303,9 @@ mediaLab/
 | 8 | Cost | Recorded per job; optional daily cap; no dashboard. |
 | 9 | Deploy | Single container on Coolify, one volume. |
 | 10 | Tests | pytest (unit + integration) + Playwright E2E; live calls opt-in only. |
+| A | Job schema | Generic `media_jobs` with `kind` + JSON `params`, so video/audio are additive. |
+| B | Model catalogue | Static typed `models.json`, generated offline, served by `GET /api/models`. No runtime fetch. |
+| C | Visibility | Private only. Generation ids are UUIDs anyway, so a public read-only view is additive later. |
 
 ## 16. Open questions
 
