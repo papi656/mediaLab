@@ -91,6 +91,10 @@ deselected by default by the `-m 'not live'` in `pyproject.toml`.
 - **Files are content-addressed and shared.** Two jobs producing identical bytes point
   at one file, so deletion is reference-counted by SHA-256. GC deletes rows before
   files, and never unlinks a file another job still references.
+- **A reference image belongs to the job that last used it.** Uploads start unowned and
+  the GC sweeps unowned ones after 24 h, so creating a job links its references to it.
+  A retry that finds a reference gone fails loudly instead of quietly generating from
+  the prompt alone.
 - **Provider URLs expire**, so output is always downloaded server-side.
 - **Providers may return fewer images than `n`**; both numbers are stored and shown.
 - **Deleted jobs linger for 7 days** (`SOFT_DELETE_RETENTION_DAYS`) so Undo is real.

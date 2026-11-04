@@ -129,7 +129,9 @@ class JobOut(BaseModel):
             started_at=job.started_at,
             finished_at=job.finished_at,
             deleted_at=job.deleted_at,
-            assets=[AssetOut.from_asset(a) for a in job.assets],
+            # Inputs are linked to the job for retention, not for display: a job's
+            # "assets" are the things it produced.
+            assets=[AssetOut.from_asset(a) for a in job.assets if a.role == "output"],
         )
 
 

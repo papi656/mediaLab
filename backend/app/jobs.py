@@ -17,6 +17,40 @@ log = logging.getLogger("medialab.jobs")
 TERMINAL = {"succeeded", "failed", "interrupted", "cancelled"}
 
 
+class MissingReferences(Exception):
+    """A job names reference assets that no longer exist."""
+
+    def __init__(self, ids: list[str]) -> None:
+        self.ids = ids
+        super().__init__(f"missing reference assets: {', '.join(ids)}")
+
+
+def claim_references(session, job) -> int:  # noqa: ANN001
+    """Attach uploaded references to the job that uses them.
+
+    Uploads are created with `job_id = None`, and the GC sweeps orphans after
+    `ORPHAN_UPLOAD_HOURS`. Without this link a reference would be deleted 24 h
+    after upload while jobs still name it, so a retry the next day would run from
+    the prompt alone and report success.
+
+    One column cannot express "used by N jobs", so the rule is: the job that most
+    recently named the reference owns it. Uploading once and generating twice moves
+    ownership to the second job, which keeps the row alive once the first is deleted.
+    A retry of the older job after the newer one is itself GC'd still finds the row
+    gone — that path fails loudly (`MissingReferences`) instead of silently running
+    without it.
+    """
+    ids = list((job.params or {}).get("reference_asset_ids") or [])
+    claimed = 0
+    for asset_id in ids:
+        asset = session.get(Asset, asset_id)
+        if asset is None or asset.role != "input":
+            continue
+        asset.job_id = job.id
+        claimed += 1
+    return claimed
+
+
 def new_job(
     session,  # noqa: ANN001
     *,
@@ -34,6 +68,8 @@ def new_job(
         n_requested=int(params.get("n", 1)),
     )
     session.add(job)
+    session.flush()  # the id comes from a Python-side default; the claim needs it
+    claim_references(session, job)
     session.commit()
     return job
 
@@ -61,14 +97,20 @@ def run_job(state, job_id: str) -> None:  # noqa: ANN001
             session.commit()
 
             references: list[tuple[bytes, str]] = []
+            missing: list[str] = []
             for asset_id in job.params.get("reference_asset_ids") or []:
                 asset = session.get(Asset, asset_id)
                 if asset is None:
+                    missing.append(asset_id)
                     continue
                 references.append(
                     (read_bytes(settings.assets_dir, asset.sha256, asset.filename),
                      asset.content_type)
                 )
+            if missing:
+                # Fail visibly. Silently dropping a reference changes the output
+                # with no sign that anything went wrong.
+                raise MissingReferences(missing)
 
             request = ProviderRequest(
                 model=job.model,
@@ -80,6 +122,14 @@ def run_job(state, job_id: str) -> None:  # noqa: ANN001
 
         result = state.provider.generate(request)
 
+    except MissingReferences as exc:
+        _fail(
+            state,
+            job_id,
+            "a reference image for this generation no longer exists",
+            {"missing_reference_asset_ids": exc.ids, "hint": "upload the reference again"},
+        )
+        return
     except ProviderError as exc:
         _fail(state, job_id, exc.message, exc.detail)
         return
