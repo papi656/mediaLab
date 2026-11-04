@@ -77,19 +77,11 @@ git diff app/data/models.json
 ```bash
 cd backend && uv run pytest                  # 74 tests, no network
 cd backend && uv run pytest -m live          # one real, cheap OpenRouter call
-cd e2e && npx playwright test                # 13 browser flows, no network
 ```
 
-Backend tests use a fake provider that **records the exact payload it would have sent
-to OpenRouter**, so mapping coverage is real without spending money. Live tests are
+Tests use a fake provider that **records the exact payload it would have sent to
+OpenRouter**, so mapping coverage is real without spending money. Live tests are
 deselected by default by the `-m 'not live'` in `pyproject.toml`.
-
-End-to-end tests boot the real stack (built SPA + FastAPI + fake provider) and drive it
-headlessly. To point them at an already-running server:
-
-```bash
-E2E_BASE_URL=http://127.0.0.1:8000 npx playwright test
-```
 
 ## Constraints (deliberate)
 
@@ -119,5 +111,4 @@ backend/
 frontend/src/
   features/generate/   capability-driven form and result panel
   routes/              Login, Generate, History
-e2e/workflows/         Playwright specs
 ```

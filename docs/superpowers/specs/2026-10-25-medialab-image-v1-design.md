@@ -267,7 +267,11 @@ Because it records the payload, tests assert the **exact** OpenRouter request bo
 - **Retention/GC:** soft-deleted job vanishes from History but its asset survives; restore brings it back; GC past the retention window drops the row and unlinks the file; **a file shared by a live job is not unlinked** (the refcount test — the one that would silently corrupt data if wrong); `--dry-run` mutates nothing; GC is idempotent when run twice.
 - **Live (opt-in):** `@pytest.mark.live`, deselected by default, `pytest -m live` runs **one** cheap generation against the cheapest model to prove the adapter still matches reality. Requires `OPENROUTER_API_KEY`.
 
-### Frontend E2E (`Playwright`)
+### Frontend E2E (`Playwright`) — **removed**
+
+> Superseded: the Playwright suite (and Playwright itself) was uninstalled on 2026-11-03.
+> This section is kept as a record of the v1 design; nothing below is runnable any more.
+> The behaviours it covered are now unverified except where backend tests reach them.
 
 Drives the real stack: `uvicorn` (fake provider, tmp DB) + built SPA. Runs headless and unattended; `playwright test` is the entrypoint. Can attach to an existing Chrome over CDP (`connectOverCDP`) when a browser session is already open.
 
@@ -308,7 +312,6 @@ mediaLab/
 ├── frontend/
 │   ├── src/{components/ui,features/generate,features/history,lib,routes}
 │   └── components.json
-├── e2e/workflows/*.spec.ts
 ├── Dockerfile
 ├── docker-compose.yml
 └── .env.example
@@ -327,7 +330,7 @@ mediaLab/
 | 7 | Auth | Single-operator JWT cookie. |
 | 8 | Cost | Recorded per job; optional daily cap; no dashboard. |
 | 9 | Deploy | Single container on Coolify, one volume. |
-| 10 | Tests | pytest (unit + integration) + Playwright E2E; live calls opt-in only. |
+| 10 | Tests | pytest (unit + integration) + Playwright E2E; live calls opt-in only. **E2E removed 2026-11-03.** |
 | A | Job schema | Generic `media_jobs` with `kind` + JSON `params`, so video/audio are additive. |
 | B | Model catalogue | Static typed `models.json`, generated offline, served by `GET /api/models`. No runtime fetch. |
 | C | Visibility | Private only. Generation ids are UUIDs anyway, so a public read-only view is additive later. |
