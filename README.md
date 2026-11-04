@@ -49,6 +49,10 @@ SESSION_SECRET=...          # python -c "import secrets;print(secrets.token_urls
 DAILY_BUDGET_USD=5          # optional
 ```
 
+With `PROVIDER=openrouter` the server refuses to boot if `SESSION_SECRET` is still the
+value in this repo, is shorter than 32 bytes, or if no password and no API key are set.
+Those are startup errors, not first-request errors.
+
 ## Deploy (Coolify)
 
 Single container, single volume. `Dockerfile` builds the SPA with Node and serves it

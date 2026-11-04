@@ -4,8 +4,13 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# The value committed in .env.example and in this file. It is public, so anyone who
+# reads the repo can mint a session token with it.
+DEV_SESSION_SECRET = "dev-only-insecure-secret-change-me"
+MIN_SESSION_SECRET_BYTES = 32
 
 
 class Settings(BaseSettings):
@@ -52,6 +57,40 @@ class Settings(BaseSettings):
         if isinstance(value, str) and not value.strip():
             return None
         return value
+
+    @model_validator(mode="after")
+    def _refuse_to_deploy_with_dev_defaults(self):
+        """Fail at startup, not at the first request.
+
+        `PROVIDER=fake` is a local/test configuration, so the permissive defaults are
+        fine there. Anything that spends real money or faces the internet must not
+        boot with a secret that is printed in the repository.
+        """
+        if self.provider == "fake":
+            return self
+
+        problems: list[str] = []
+        if self.session_secret == DEV_SESSION_SECRET:
+            problems.append(
+                "SESSION_SECRET is still the public default; generate one with "
+                "python -c \"import secrets;print(secrets.token_urlsafe(48))\""
+            )
+        elif len(self.session_secret) < MIN_SESSION_SECRET_BYTES:
+            problems.append(
+                f"SESSION_SECRET is {len(self.session_secret)} bytes; "
+                f"use at least {MIN_SESSION_SECRET_BYTES}"
+            )
+        if not self.admin_password_hash and not self.admin_password:
+            problems.append("set ADMIN_PASSWORD_HASH (or ADMIN_PASSWORD for dev)")
+        if self.provider == "openrouter" and not self.openrouter_api_key:
+            problems.append("PROVIDER=openrouter needs OPENROUTER_API_KEY")
+
+        if problems:
+            raise ValueError(
+                "refusing to start with an unsafe configuration:\n  - "
+                + "\n  - ".join(problems)
+            )
+        return self
 
     @property
     def assets_dir(self) -> Path:
