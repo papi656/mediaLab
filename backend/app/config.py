@@ -29,13 +29,27 @@ class Settings(BaseSettings):
     # --- auth -----------------------------------------------------------
     session_secret: str = "dev-only-insecure-secret-change-me"
     session_days: int = 7
-    admin_password: str = ""          # plaintext, dev convenience only
-    admin_password_hash: str = ""     # bcrypt; takes precedence when set
+    admin_password: str = ""  # plaintext, dev convenience only
+    admin_password_hash: str = ""  # bcrypt; takes precedence when set
 
     # --- storage --------------------------------------------------------
     data_dir: Path = Path("./data")
-    static_dir: Path | None = None     # built SPA, mounted at / when present
+    static_dir: Path | None = None  # built SPA, mounted at / when present
     max_upload_mb: int = 20
+
+    # --- ingress --------------------------------------------------------
+    # Which peers may set X-Forwarded-For. This is uvicorn's own env var, read by
+    # uvicorn itself; the field exists so an unsafe value fails at startup instead
+    # of quietly handing the login rate limiter to whoever can reach the port.
+    # Behind the Cloudflare Tunnel the peer is the Docker gateway that NATs the
+    # loopback-published port (verified: 172.17.0.1 on the default bridge), so this
+    # is one address, not "*".
+    forwarded_allow_ips: str = "127.0.0.1,::1"
+    # None => Secure (+ __Host- prefix) for anything that is not the fake provider,
+    # so local HTTP dev keeps working without a flag and production cannot opt out
+    # by accident.
+    cookie_secure: bool | None = None
+    enable_docs: bool = False
 
     # --- cost / limits --------------------------------------------------
     daily_budget_usd: float | None = None
@@ -50,12 +64,36 @@ class Settings(BaseSettings):
     fake_latency_ms: int = 50
     fake_fail: bool = False
 
-    @field_validator("daily_budget_usd", "static_dir", mode="before")
+    @field_validator("daily_budget_usd", "static_dir", "cookie_secure", mode="before")
     @classmethod
     def _blank_is_none(cls, value):
-        """An env var set to the empty string means "unset", not "zero" or "cwd"."""
+        """An env var set to the empty string means "unset", not "zero" or "cwd".
+
+        This is not cosmetic: `backend/.env.example` ships `COOKIE_SECURE=` empty
+        (the annotated "derive it from PROVIDER" shape), and a deployment UI leaves
+        optional fields blank rather than absent. Without this, copying the template
+        makes the process exit on a bool-parsing error before it can log anything.
+        Every optional field that is not a plain string belongs in this list.
+        """
         if isinstance(value, str) and not value.strip():
             return None
+        return value
+
+    @field_validator("forwarded_allow_ips")
+    @classmethod
+    def _never_trust_everyone(cls, value: str) -> str:
+        entries = [item.strip() for item in value.split(",") if item.strip()]
+        if not entries:
+            raise ValueError(
+                "FORWARDED_ALLOW_IPS is empty; list the proxy's address "
+                "(the Docker gateway in front of the container), not nothing"
+            )
+        if "*" in entries:
+            raise ValueError(
+                "FORWARDED_ALLOW_IPS must name the proxy, never '*': any peer that "
+                "can reach the port could then forge X-Forwarded-For and rotate its "
+                "way past the login rate limiter"
+            )
         return value
 
     @model_validator(mode="after")
@@ -73,7 +111,7 @@ class Settings(BaseSettings):
         if self.session_secret == DEV_SESSION_SECRET:
             problems.append(
                 "SESSION_SECRET is still the public default; generate one with "
-                "python -c \"import secrets;print(secrets.token_urlsafe(48))\""
+                'python -c "import secrets;print(secrets.token_urlsafe(48))"'
             )
         elif len(self.session_secret) < MIN_SESSION_SECRET_BYTES:
             problems.append(
@@ -84,13 +122,29 @@ class Settings(BaseSettings):
             problems.append("set ADMIN_PASSWORD_HASH (or ADMIN_PASSWORD for dev)")
         if self.provider == "openrouter" and not self.openrouter_api_key:
             problems.append("PROVIDER=openrouter needs OPENROUTER_API_KEY")
+        if self.provider == "openrouter" and self.daily_budget_usd is None:
+            problems.append(
+                "PROVIDER=openrouter needs DAILY_BUDGET_USD; today's spend is "
+                "GET /api/usage?period=day"
+            )
 
         if problems:
             raise ValueError(
-                "refusing to start with an unsafe configuration:\n  - "
-                + "\n  - ".join(problems)
+                "refusing to start with an unsafe configuration:\n  - " + "\n  - ".join(problems)
             )
         return self
+
+    @property
+    def resolved_cookie_secure(self) -> bool:
+        """Explicit `COOKIE_SECURE` wins; otherwise red unless we are in dev."""
+        if self.cookie_secure is not None:
+            return self.cookie_secure
+        return self.provider != "fake"
+
+    @property
+    def trusts_only_loopback(self) -> bool:
+        entries = {item.strip() for item in self.forwarded_allow_ips.split(",") if item.strip()}
+        return entries <= {"127.0.0.1", "::1", "localhost"}
 
     @property
     def assets_dir(self) -> Path:
