@@ -11,9 +11,27 @@ from fastapi import HTTPException, Request, status
 from .config import Settings
 from .db import utcnow
 
-COOKIE_NAME = "ml_session"
+COOKIE_BASE = "ml_session"
+SECURE_PREFIX = "__Host-"  # requires Secure, forbids Domain, blocks sibling subdomains
 ALGORITHM = "HS256"
 MAX_PASSWORD_BYTES = 72  # bcrypt truncates beyond this
+
+
+def cookie_name(*, secure: bool) -> str:
+    return f"{SECURE_PREFIX}{COOKIE_BASE}" if secure else COOKIE_BASE
+
+
+def read_session_token(request: Request) -> str | None:
+    """Accept either name, secure first.
+
+    Flipping `COOKIE_SECURE` must not half-log someone in: the old cookie keeps
+    working until it expires, and logging out clears both shapes.
+    """
+    for secure in (True, False):
+        token = request.cookies.get(cookie_name(secure=secure))
+        if token:
+            return token
+    return None
 
 
 def hash_password(password: str) -> str:
@@ -47,7 +65,7 @@ def decode_session_token(token: str, settings: Settings) -> dict:
 
 
 def require_auth(request: Request) -> None:
-    token = request.cookies.get(COOKIE_NAME)
+    token = read_session_token(request)
     if not token:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "authentication required")
     try:

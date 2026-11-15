@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .auth import COOKIE_NAME, LoginLimiter
+from .auth import LoginLimiter, read_session_token
 from .capabilities import Catalogue, catalogue_for
 from .config import Settings, get_settings
 from .db import init_db, make_engine, make_sessionmaker
@@ -70,12 +70,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             for future in list(state.futures):
                 future.cancel()
 
+    # A private, single-operator service should not publish a map of its own API.
+    # Turning the flag on is a deliberate act, and the frontend's generated types
+    # come from a local run with ENABLE_DOCS=1.
+    docs_url = "/api/docs" if settings.enable_docs else None
+    openapi_url = "/api/openapi.json" if settings.enable_docs else None
     app = FastAPI(
         title="mediaLab",
         version="0.1.0",
         lifespan=lifespan,
-        docs_url="/api/docs",
-        openapi_url="/api/openapi.json",
+        docs_url=docs_url,
+        openapi_url=openapi_url,
     )
 
     @app.middleware("http")
@@ -84,22 +89,41 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if (
             request.method in MUTATING
             and request.url.path.startswith("/api/")
-            and request.cookies.get(COOKIE_NAME)
+            and read_session_token(request)
             and request.headers.get("x-requested-with") != "fetch"
         ):
-            return JSONResponse(
-                {"detail": "missing X-Requested-With header"}, status_code=403
-            )
+            return JSONResponse({"detail": "missing X-Requested-With header"}, status_code=403)
         response = await call_next(request)
         if request.url.path.startswith("/api/"):
             response.headers.setdefault("Cache-Control", "no-store")
         return response
+
+    _log_ingress_posture(settings)
 
     for module in (auth, models, generations, assets, usage):
         app.include_router(module.router)
 
     _mount_spa(app, settings.static_dir)
     return app
+
+
+def _log_ingress_posture(settings: Settings) -> None:
+    """Say out loud the two settings that are invisible until they are wrong."""
+    log.info(
+        "ingress: forwarded_allow_ips=%r secure_cookies=%s docs=%s",
+        settings.forwarded_allow_ips,
+        settings.resolved_cookie_secure,
+        settings.enable_docs,
+    )
+    if settings.provider != "fake" and settings.trusts_only_loopback:
+        log.warning(
+            "FORWARDED_ALLOW_IPS is loopback-only but PROVIDER=%s: behind a proxy the "
+            "client address is the proxy, so every visitor shares one login-limit "
+            "bucket. Set it to the Docker gateway that fronts this container: docker "
+            "inspect <container> --format '{{range $k, $v := .NetworkSettings.Networks}}'"
+            "'{{$v.Gateway}} {{end}}'.",
+            settings.provider,
+        )
 
 
 def _mount_spa(app: FastAPI, static_dir: Path | None) -> None:
@@ -122,4 +146,3 @@ def _mount_spa(app: FastAPI, static_dir: Path | None) -> None:
         if full_path and candidate.is_file():
             return FileResponse(candidate)
         return FileResponse(index)
-

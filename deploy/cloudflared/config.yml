@@ -1,0 +1,32 @@
+# Locally-managed Cloudflare Tunnel for this VPS.
+#
+# Install once (see docs/vps-runbook.md):
+#   cloudflared tunnel create medialab          -> prints the UUID, writes the JSON
+#   sudo install -m 600 ~/.cloudflared/<UUID>.json /etc/cloudflared/<UUID>.json
+#   sudo install -m 644 deploy/cloudflared/config.yml /etc/cloudflared/config.yml
+#   sudo cloudflared service install
+#
+# The ingress table lives in git on purpose: adding a service is a reviewable
+# diff, and a bad route is one `git revert` away, not a dashboard archaeology
+# exercise. If you switch to the dashboard-managed (token) mode instead, this
+# file stops being the source of truth — pick one mode and delete the other.
+
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /etc/cloudflared/REPLACE_WITH_TUNNEL_UUID.json
+
+# No `warp-routing`, no metrics port on a public interface.
+metrics: 127.0.0.1:20241
+
+ingress:
+  # mediaLab. The app publishes its port on 127.0.0.1 only; nothing else on the
+  # host is reachable from the internet, including the VPS's own 80/443.
+  - hostname: medialab.papi656.com
+    service: http://127.0.0.1:8000
+    originRequest:
+      connectTimeout: 30s
+
+  # New services go above this line, each on its own loopback port:
+  #   - hostname: something.papi656.com
+  #     service: http://127.0.0.1:8001
+
+  - service: http_status:404

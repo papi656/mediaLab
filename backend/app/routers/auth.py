@@ -1,23 +1,31 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from sqlalchemy import text
 
-from ..auth import COOKIE_NAME, LoginLimiter, create_session_token, verify_password
+from ..auth import (
+    LoginLimiter,
+    cookie_name,
+    create_session_token,
+    read_session_token,
+    verify_password,
+)
 from ..schemas import HealthOut, LoginIn, MeOut
 
+log = logging.getLogger("medialab.auth")
+
 router = APIRouter(tags=["auth"])
-
-
-def _is_secure(request: Request) -> bool:
-    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-    return proto == "https"
 
 
 @router.post("/api/auth/login", status_code=status.HTTP_204_NO_CONTENT)
 def login(body: LoginIn, request: Request, response: Response) -> Response:
     settings = request.app.state.settings
     limiter: LoginLimiter = request.app.state.login_limiter
+    # The proxy (cloudflared's NAT gateway, then whatever uvicorn rewrote from a
+    # trusted X-Forwarded-For) is the only source of identity we have. Which is
+    # why FORWARDED_ALLOW_IPS may not be "*" — see app/config.py.
     key = request.client.host if request.client else "unknown"
 
     if limiter.blocked(key):
@@ -32,17 +40,25 @@ def login(body: LoginIn, request: Request, response: Response) -> Response:
     )
     if not ok:
         limiter.record_failure(key)
+        # Two addresses in one line, because they disagree in exactly one
+        # situation worth noticing: the trust list does not match the proxy, so
+        # every visitor is being counted as the same client.
+        log.warning(
+            "login failed: peer=%s cf-connecting-ip=%s",
+            key,
+            request.headers.get("cf-connecting-ip", "-"),
+        )
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid password")
 
     limiter.reset(key)
-    token = create_session_token(settings)
+    secure = settings.resolved_cookie_secure
     response.set_cookie(
-        COOKIE_NAME,
-        token,
+        cookie_name(secure=secure),
+        create_session_token(settings),
         max_age=settings.session_days * 24 * 3600,
         httponly=True,
         samesite="lax",
-        secure=_is_secure(request),
+        secure=secure,
         path="/",
     )
     response.status_code = status.HTTP_204_NO_CONTENT
@@ -51,7 +67,10 @@ def login(body: LoginIn, request: Request, response: Response) -> Response:
 
 @router.post("/api/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(request: Request, response: Response) -> Response:
-    response.delete_cookie(COOKIE_NAME, path="/")
+    # Both shapes: `__Host-` cookies cannot be deleted by a Set-Cookie that lacks
+    # Secure, and a name-only delete would leave a stale session behind.
+    for secure in (True, False):
+        response.delete_cookie(cookie_name(secure=secure), path="/", secure=secure)
     response.status_code = status.HTTP_204_NO_CONTENT
     return response
 
@@ -63,7 +82,7 @@ def me(request: Request) -> MeOut:
 
     from ..auth import decode_session_token
 
-    token = request.cookies.get(COOKIE_NAME)
+    token = read_session_token(request)
     if not token:
         return MeOut(authenticated=False)
     try:

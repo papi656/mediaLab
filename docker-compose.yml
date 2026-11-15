@@ -1,13 +1,20 @@
+# Local development only. Production runs on Coolify with env vars set in its UI
+# (docs/vps-deployment-decisions.md, D8) and is reached through the Cloudflare
+# Tunnel (D12), never through a published container port.
 services:
   medialab:
     build: .
     restart: unless-stopped
-    env_file: .env
+    env_file: backend/.env
     environment:
       DATA_DIR: /data
       STATIC_DIR: /app/static
+    # Loopback-only on purpose: the tunnel connector on the host dials 127.0.0.1.
+    # There is no host-level port for the internet to reach, which is the whole
+    # point of D1 — and it is also why the container sees its peer as the Docker
+    # gateway rather than 127.0.0.1 (see FORWARDED_ALLOW_IPS).
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${MEDIALAB_PORT:-8000}:8000"
     volumes:
       - medialab-data:/data
 

@@ -50,20 +50,36 @@ DAILY_BUDGET_USD=5          # optional
 ```
 
 With `PROVIDER=openrouter` the server refuses to boot if `SESSION_SECRET` is still the
-value in this repo, is shorter than 32 bytes, or if no password and no API key are set.
-Those are startup errors, not first-request errors.
+value in this repo, is shorter than 32 bytes, if no password and no API key are set, if
+`DAILY_BUDGET_USD` is unset, or if `FORWARDED_ALLOW_IPS` contains `*`. Those are startup
+errors, not first-request errors.
 
-## Deploy (Coolify)
+## Deploy (Cloudflare Tunnel → Coolify)
 
-Single container, single volume. `Dockerfile` builds the SPA with Node and serves it
-from FastAPI, so there is no CORS and no nginx.
+Single container, single volume, one ingress. `Dockerfile` builds the SPA with Node and
+serves it from FastAPI, so there is no CORS and no nginx. The container is reached only
+through a Cloudflare Tunnel: **no inbound port on the VPS, no Let's Encrypt, no Traefik
+router for this app.**
 
-1. Point Coolify at this repo, build with the Dockerfile.
-2. Set the env vars from `backend/.env.example`.
-3. Mount a persistent volume at `/data` (SQLite, images, nothing else).
-4. Expose port `8000`.
+Run `docs/vps-runbook.md` in order. The short version:
 
-`--workers 1` is not a mistake — see *Constraints*.
+1. `cloudflared` connector on the host (systemd), one tunnel, ingress table in
+   `deploy/cloudflared/config.yml` → `http://127.0.0.1:8000`.
+2. In Coolify: Dockerfile build pack, *Ports Mappings* `127.0.0.1:8000:8000`, **no
+domain**, bind mount `/srv/medialab/data:/data` pre-chowned to `10001:10001`.
+3. Env vars from `backend/.env.example`, set in the Coolify UI — not a committed `.env`.
+   `FORWARDED_ALLOW_IPS` must be the Docker gateway in front of the container (never `*`),
+   and `DAILY_BUDGET_USD` is mandatory once `PROVIDER=openrouter`.
+4. Verify with runbook §6 — especially the rotating-`X-Forwarded-For` check, which is the
+   one that proves the login limiter is not bypassable.
+
+`--workers 1` is not a mistake — see *Constraints*. Deploys interrupt in-flight jobs;
+that is accepted, and Retry is the recovery path.
+
+**Read `docs/vps-deployment-decisions.md` before the first deploy.** It records the ingress,
+proxy-trust, cookie, disk-cap, migration and backup decisions — and, at the time of
+writing, that D4 (disk/RAM caps), D7 (Alembic) and D9 (backups) are **not implemented
+yet**.
 
 ## Updating the model catalogue
 
@@ -79,7 +95,7 @@ git diff app/data/models.json
 ## Tests
 
 ```bash
-cd backend && uv run pytest                  # 74 tests, no network
+cd backend && uv run pytest                  # 105 tests, no network
 cd backend && uv run pytest -m live          # one real, cheap OpenRouter call
 ```
 

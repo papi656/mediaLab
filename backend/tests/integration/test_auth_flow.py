@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from app.auth import COOKIE_NAME
+from app.auth import cookie_name
 
 from ..helpers import PASSWORD
 
 GEMINI = "google/gemini-3-pro-image"
+# The fixture uses PROVIDER=fake, so the cookie is the unprefixed dev shape.
+COOKIE = cookie_name(secure=False)
 
 
 def test_api_requires_auth(client):
@@ -26,7 +28,7 @@ def test_health_is_public(client):
 def test_wrong_password_is_rejected(client):
     response = client.post("/api/auth/login", json={"password": "nope"})
     assert response.status_code == 401
-    assert COOKIE_NAME not in client.cookies
+    assert COOKIE not in client.cookies
 
 
 def test_login_sets_httponly_cookie(client):
@@ -73,5 +75,5 @@ def test_unauthenticated_mutation_is_401_not_403(client):
 
 
 def test_tampered_cookie_is_rejected(client):
-    client.cookies.set(COOKIE_NAME, "not-a-jwt")
+    client.cookies.set(COOKIE, "not-a-jwt")
     assert client.get("/api/models").status_code == 401
