@@ -34,6 +34,12 @@ class Settings(BaseSettings):
 
     # --- storage --------------------------------------------------------
     data_dir: Path = Path("./data")
+    # Dev and tests migrate at startup, because nothing else will. Production sets
+    # this off and runs `alembic upgrade head` as the Coolify pre-deployment command,
+    # so a failed migration aborts the deploy while the old container still serves
+    # (D7). With it off, startup verifies the schema is already at head and refuses
+    # to boot otherwise — a skipped migration step must not become a runtime error.
+    run_migrations_on_start: bool = True
     static_dir: Path | None = None  # built SPA, mounted at / when present
     max_upload_mb: int = 20
 
@@ -126,6 +132,13 @@ class Settings(BaseSettings):
             problems.append(
                 "PROVIDER=openrouter needs DAILY_BUDGET_USD; today's spend is "
                 "GET /api/usage?period=day"
+            )
+        if self.run_migrations_on_start:
+            problems.append(
+                "RUN_MIGRATIONS_ON_START must be 0 in a real deployment: the schema is "
+                "migrated by the pre-deployment command while the old container still "
+                "serves, so a failing migration aborts the deploy instead of taking the "
+                "site down (D7). With it 0, startup verifies the schema is at head."
             )
 
         if problems:

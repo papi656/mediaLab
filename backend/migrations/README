@@ -1,0 +1,32 @@
+# Migrations
+
+`alembic upgrade head` is the only supported way to create or change the schema — there
+is no `create_all` path left, in tests included (`docs/vps-deployment-decisions.md`, D7).
+
+* **CLI** (local dev, and the Coolify pre-deployment command in production): reads
+  `DATA_DIR` through `app.config.Settings`, so the database location has exactly one
+  owner. `alembic.ini` deliberately contains no `sqlalchemy.url`.
+* **Application and tests**: `app.db.init_db()` runs the same script against an
+  already-open connection, so the migration exercised by a test is the one that ships.
+
+Adding a revision:
+
+```bash
+cd backend
+uv run alembic revision --autogenerate -m "add thing"   # read the generated file
+uv run alembic upgrade head
+uv run alembic check                                    # "No new upgrade operations detected"
+uv run pytest                                           # drift test fails otherwise
+```
+
+Rules that are not optional here:
+
+1. **Expand-then-contract.** The pre-deploy step mutates the schema while the *old*
+   container is still serving, so a rename or drop in the same deploy that adds its
+   replacement breaks the running container mid-deploy. Add + backfill first, switch the
+   code in a later release, drop the old column last.
+2. **`render_as_batch=True` stays on** (`env.py`). SQLite cannot alter a column in place;
+   batch mode emits the create-copy-swap form instead of a statement the database rejects
+   at deploy time.
+3. **Never hand-edit `alembic_version`.** A stamp is how a database ends up at a revision
+   whose statements never actually ran.

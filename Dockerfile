@@ -29,6 +29,11 @@ USER app
 RUN uv sync --frozen --no-dev
 
 COPY --chown=app:app backend/app ./app
+# Migrations ship in the image because `alembic upgrade head` is the Coolify
+# pre-deployment command (D7). Without these two COPYs the pre-deploy step fails with
+# "Path doesn't exist: migrations" and no schema change can ever reach production.
+COPY --chown=app:app backend/alembic.ini ./alembic.ini
+COPY --chown=app:app backend/migrations ./migrations
 COPY --from=web --chown=app:app /web/dist ./static
 
 USER root

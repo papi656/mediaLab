@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from .auth import LoginLimiter, read_session_token
 from .capabilities import Catalogue, catalogue_for
 from .config import Settings, get_settings
-from .db import init_db, make_engine, make_sessionmaker
+from .db import init_db, make_engine, make_sessionmaker, require_at_head
 from .gc import gc_loop, run_gc_once
 from .jobs import mark_interrupted
 from .providers import ImageProvider, make_provider
@@ -38,7 +38,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings.prepare_dirs()
 
     engine = make_engine(settings.database_url)
-    init_db(engine)
+    if settings.run_migrations_on_start:
+        init_db(engine)
+    else:
+        # Production shape: the pre-deployment command already migrated. Prove it
+        # rather than trust it — see docs/vps-deployment-decisions.md, D7.
+        require_at_head(engine)
     sessionmaker = make_sessionmaker(engine)
     catalogue = catalogue_for(settings.catalogue_path)
     provider = make_provider(settings)

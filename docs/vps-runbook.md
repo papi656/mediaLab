@@ -87,6 +87,7 @@ Create the app from this repo, **Dockerfile build pack**, and set:
 | Ports Exposes | `8000` | container port, for the Docker network only |
 | Ports Mappings | `127.0.0.1:8000:8000` | the connector dials loopback; the internet cannot reach it |
 | Domains | **none** | a Coolify domain would re-create a second ingress and a TLS redirect loop |
+| Pre-deployment Command | `alembic upgrade head` | the schema is migrated against the **new** image with `/data` mounted, while the old container still serves, so a failing migration aborts the deploy instead of causing an outage (D7) |
 | Persistent Storage | bind `/srv/medialab/data` → `/data` | survives `docker compose down -v` |
 | Preview Deployments | off | a preview would claim the same loopback port |
 | Autoscaling / replicas | off | in-process jobs, `--workers 1` |
@@ -116,6 +117,8 @@ ADMIN_PASSWORD_HASH=<bcrypt>
 DAILY_BUDGET_USD=<number>           # mandatory when PROVIDER=openrouter
 DATA_DIR=/data
 STATIC_DIR=/app/static
+RUN_MIGRATIONS_ON_START=0          # the pre-deployment command migrates; with 0 the
+                                  #   container refuses to start on a stale schema
 FORWARDED_ALLOW_IPS=<gateway>       # next section
 COOKIE_SECURE=true
 ENABLE_DOCS=0
@@ -193,7 +196,15 @@ for i in $(seq 1 7); do curl -s -o /dev/null -w '%{http_code} ' \
 docker exec <container> id                                  # uid=10001(app)
 docker exec <container> sh -c 'touch /data/probe && ls -ln /data/probe'   # 10001 10001
 docker exec <container> ls -ln /data | head                 # medialab.db owned by 10001
+
+# 6.7 the pre-deploy migration actually ran, and the container agreed with it
+docker exec <container> alembic current                     # 50a3ad53309a (head)
+docker exec <container> alembic heads                       # same revision
 ```
+
+`6.7` is what proves the pre-deployment command is wired up. If the two differ, the
+container would have refused to start (`RUN_MIGRATIONS_ON_START=0`), so a running
+container whose `alembic current` is behind head is impossible — which is the point.
 
 `6.5` blocking you out for 15 minutes is expected — it counts your own attempts against
 whatever address Cloudflare reports. Wait, or restart the container to clear the in-memory
@@ -217,12 +228,26 @@ The server refuses to boot with `PROVIDER=openrouter` and no `DAILY_BUDGET_USD`,
 | Decision | State |
 | --- | --- |
 | D4 — disk/RAM caps (watermark `507`, reference-bytes cap) | **not implemented**; only `MAX_UPLOAD_MB` and `--limit-concurrency 8` exist |
-| D7 — Alembic migrations | **not implemented**; `init_db()` is still `create_all`, so the first schema change after go-live will fail at runtime instead of at startup |
+| D7 — Alembic migrations | **implemented**; only the failed-migration/redeploy check is unrun, and it needs a VPS (§6.7 proves the happy path) |
 | D9 — off-host backup + restore drill | **not implemented**; `/data` has no copy off the VPS |
 | D11 — deploy interrupts in-flight jobs | accepted; the job shows `interrupted` and Retry is the path |
 
-Do D7 before the first *production* row exists. `docker compose down -v` on the local
-stack is not a backup.
+`docker compose down -v` on the local stack is not a backup.
+
+Adding a migration locally:
+
+```bash
+cd backend
+uv run alembic revision --autogenerate -m "add thing"   # review the generated file
+uv run alembic upgrade head                             # what the pre-deploy step runs
+uv run alembic check                                    # must print "No new upgrade operations detected"
+uv run pytest                                           # test_models_and_migrations_do_not_drift guards this
+```
+
+Every migration must be **expand-then-contract**: the pre-deploy step mutates the schema
+while the *old* container is still serving, so a rename or a drop in the same deploy that
+adds its replacement breaks the running container mid-deploy. Add the column, backfill,
+switch the code in a later release, drop the old column last.
 
 ## 9. Troubleshooting
 
@@ -234,6 +259,7 @@ stack is not a backup.
 | All visitors look like one client | `FORWARDED_ALLOW_IPS` is the old value or loopback | re-read the gateway (§4) and redeploy |
 | `docker exec <c> id` says `uid=0` | Coolify overrode `USER` | the no-root fork in D6; either fix Coolify's setting or accept a root-then-drop entrypoint |
 | `Permission denied` writing `/data` | bind mount not chowned to 10001 | `sudo chown -R 10001:10001 /srv/medialab/data` |
+| Container exits 1: `database schema is not at head` | `RUN_MIGRATIONS_ON_START=0` and the pre-deployment command did not run or failed | fix the Pre-deployment Command (`alembic upgrade head`), redeploy; the container is deliberately refusing rather than serving a schema it does not know |
 
 ## 10. Adding a second service later
 

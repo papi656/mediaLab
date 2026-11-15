@@ -22,6 +22,7 @@ def _settings(**overrides) -> Settings:
         "admin_password": "",
         "daily_budget_usd": 5.0,
         "forwarded_allow_ips": "172.17.0.1",
+        "run_migrations_on_start": False,
     }
     return Settings(_env_file=None, **{**base, **overrides})
 
@@ -40,6 +41,19 @@ def test_the_public_default_secret_is_refused():
     with pytest.raises(ValidationError) as caught:
         _settings(session_secret=DEV_SESSION_SECRET)
     assert "SESSION_SECRET is still the public default" in str(caught.value)
+
+
+def test_boot_time_migrations_are_refused_in_a_real_deployment():
+    """D7: the pre-deploy step migrates; boot-time migration re-adds the outage.
+
+    Dev and tests keep the default (nothing else migrates for them), so this is a
+    production-shape check like the wildcard-XFF and open-ended-budget ones.
+    """
+    with pytest.raises(ValidationError) as caught:
+        _settings(run_migrations_on_start=True)
+    assert "RUN_MIGRATIONS_ON_START" in str(caught.value)
+
+    assert Settings(_env_file=None, provider="fake").run_migrations_on_start is True
 
 
 def test_a_short_secret_is_refused():

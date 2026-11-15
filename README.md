@@ -66,10 +66,14 @@ Run `docs/vps-runbook.md` in order. The short version:
 1. `cloudflared` connector on the host (systemd), one tunnel, ingress table in
    `deploy/cloudflared/config.yml` → `http://127.0.0.1:8000`.
 2. In Coolify: Dockerfile build pack, *Ports Mappings* `127.0.0.1:8000:8000`, **no
-domain**, bind mount `/srv/medialab/data:/data` pre-chowned to `10001:10001`.
+domain**, bind mount `/srv/medialab/data:/data` pre-chowned to `10001:10001`, and
+*Pre-deployment Command* `alembic upgrade head` — the schema is migrated against the new
+image while the old container keeps serving, so a failing migration aborts the deploy
+instead of causing an outage.
 3. Env vars from `backend/.env.example`, set in the Coolify UI — not a committed `.env`.
    `FORWARDED_ALLOW_IPS` must be the Docker gateway in front of the container (never `*`),
-   and `DAILY_BUDGET_USD` is mandatory once `PROVIDER=openrouter`.
+   `RUN_MIGRATIONS_ON_START=0` because the pre-deployment step migrates, and
+   `DAILY_BUDGET_USD` is mandatory once `PROVIDER=openrouter`.
 4. Verify with runbook §6 — especially the rotating-`X-Forwarded-For` check, which is the
    one that proves the login limiter is not bypassable.
 
@@ -95,13 +99,14 @@ git diff app/data/models.json
 ## Tests
 
 ```bash
-cd backend && uv run pytest                  # 105 tests, no network
+cd backend && uv run pytest                  # 112 tests, no network
 cd backend && uv run pytest -m live          # one real, cheap OpenRouter call
 ```
 
 Tests use a fake provider that **records the exact payload it would have sent to
 OpenRouter**, so mapping coverage is real without spending money. Live tests are
-deselected by default by the `-m 'not live'` in `pyproject.toml`.
+deselected by default by `-m 'not live and not e2e'` in `pyproject.toml`; the e2e
+suite needs a built frontend and a real Chrome (§`backend/tests/e2e`).
 
 ## Constraints (deliberate)
 
@@ -118,6 +123,9 @@ deselected by default by the `-m 'not live'` in `pyproject.toml`.
 - **Provider URLs expire**, so output is always downloaded server-side.
 - **Providers may return fewer images than `n`**; both numbers are stored and shown.
 - **Deleted jobs linger for 7 days** (`SOFT_DELETE_RETENTION_DAYS`) so Undo is real.
+- **The schema is migrations, not `create_all`.** Alembic, one revision, and tests that
+  fail if the models drift from it. Migrations must be expand-then-contract: the
+  pre-deploy step changes the schema while the previous container is still serving.
 
 ## Layout
 
@@ -131,6 +139,8 @@ backend/
     providers/         base protocol, openrouter adapter, fake
     routers/           auth, models, generations, assets, usage, health
     data/models.json   committed capability catalogue
+  alembic.ini          migration config (no URL: DATA_DIR owns it)
+  migrations/          one revision, "initial schema"; `alembic upgrade head` is the pre-deploy step
   scripts/gen_capabilities.py
 frontend/src/
   features/generate/   capability-driven form and result panel
