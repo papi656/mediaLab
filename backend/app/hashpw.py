@@ -1,6 +1,6 @@
 """Generate a bcrypt hash for ADMIN_PASSWORD_HASH.
 
-    uv run python -m app.hashpw
+uv run python -m app.hashpw
 """
 
 from __future__ import annotations

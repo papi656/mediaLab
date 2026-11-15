@@ -1,6 +1,6 @@
 """Opt-in: actually calls OpenRouter. Deselected by default (`-m 'not live'`).
 
-    OPENROUTER_API_KEY=... uv run pytest -m live -s
+OPENROUTER_API_KEY=... uv run pytest -m live -s
 """
 
 from __future__ import annotations
@@ -49,6 +49,5 @@ def test_live_generation_still_matches_our_adapter(provider):
     assert image.data
     assert image.content_type.startswith("image/")
     print(
-        f"\nlive ok: {len(result.images)} image(s), "
-        f"{len(image.data)} bytes, cost={result.cost_usd}"
+        f"\nlive ok: {len(result.images)} image(s), {len(image.data)} bytes, cost={result.cost_usd}"
     )

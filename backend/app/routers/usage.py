@@ -23,17 +23,25 @@ def usage(
     else:
         start = period_start(period)
 
-    jobs = session.scalar(
-        select(func.count())
-        .select_from(MediaJob)
-        .where(MediaJob.deleted_at.is_(None), MediaJob.created_at >= start)
-    ) or 0
-    images = session.scalar(
-        select(func.count())
-        .select_from(Asset)
-        .join(MediaJob, Asset.job_id == MediaJob.id)
-        .where(Asset.role == "output", MediaJob.created_at >= start, MediaJob.deleted_at.is_(None))
-    ) or 0
+    jobs = (
+        session.scalar(
+            select(func.count())
+            .select_from(MediaJob)
+            .where(MediaJob.deleted_at.is_(None), MediaJob.created_at >= start)
+        )
+        or 0
+    )
+    images = (
+        session.scalar(
+            select(func.count())
+            .select_from(Asset)
+            .join(MediaJob, Asset.job_id == MediaJob.id)
+            .where(
+                Asset.role == "output", MediaJob.created_at >= start, MediaJob.deleted_at.is_(None)
+            )
+        )
+        or 0
+    )
     return UsageOut(
         period=period,
         spend_usd=round(spend_between(session, start), 6),

@@ -104,8 +104,10 @@ def run_job(state, job_id: str) -> None:  # noqa: ANN001
                     missing.append(asset_id)
                     continue
                 references.append(
-                    (read_bytes(settings.assets_dir, asset.sha256, asset.filename),
-                     asset.content_type)
+                    (
+                        read_bytes(settings.assets_dir, asset.sha256, asset.filename),
+                        asset.content_type,
+                    )
                 )
             if missing:
                 # Fail visibly. Silently dropping a reference changes the output

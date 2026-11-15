@@ -126,9 +126,7 @@ def test_hard_cap_applies_even_when_model_allows_more(auth):
 
 
 def test_unsupported_param_is_rejected_not_dropped(auth):
-    response = auth.post(
-        "/api/generations", json={"model": NO_REFS, "prompt": "x", "seed": 7}
-    )
+    response = auth.post("/api/generations", json={"model": NO_REFS, "prompt": "x", "seed": 7})
     assert response.status_code == 422
     assert "seed is not supported" in response.text
 
@@ -231,9 +229,7 @@ def test_provider_failure_is_reported(settings):
     app = create_app(settings)
     with TestClient(app) as client:
         _login(client)
-        created = client.post(
-            "/api/generations", json={"model": GEMINI, "prompt": "boom"}
-        ).json()
+        created = client.post("/api/generations", json={"model": GEMINI, "prompt": "boom"}).json()
         job = wait_for_job(client, created["id"])
 
     assert job["status"] == "failed"
@@ -247,9 +243,7 @@ def test_daily_budget_blocks_dispatch(settings):
     app = create_app(settings)
     with TestClient(app) as client:
         _login(client)
-        response = client.post(
-            "/api/generations", json={"model": NO_REFS, "prompt": "expensive"}
-        )
+        response = client.post("/api/generations", json={"model": NO_REFS, "prompt": "expensive"})
         assert response.status_code == 429
         detail = response.json()["detail"]
         assert detail["limit_usd"] == 0.001

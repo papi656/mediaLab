@@ -59,9 +59,7 @@ def test_references_become_base64_data_urls():
     request = _request(n=1, reference_asset_ids=["a"])
     request.references = [(PNG, "image/png")]
     payload = build_request_payload(request)
-    assert payload["input_references"] == [
-        "data:image/png;base64,iVBORw0KGgpzbWFsbA=="
-    ]
+    assert payload["input_references"] == ["data:image/png;base64,iVBORw0KGgpzbWFsbA=="]
     # The asset ids are our internal ids and must not leak to the provider.
     assert "reference_asset_ids" not in payload
 

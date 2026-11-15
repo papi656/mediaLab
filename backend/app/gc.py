@@ -34,9 +34,7 @@ def run_gc(state, dry_run: bool = False) -> dict[str, int]:  # noqa: ANN001
 
     with state.sessionmaker() as session:
         expired = session.scalars(
-            select(MediaJob).where(
-                MediaJob.deleted_at.is_not(None), MediaJob.deleted_at < cutoff
-            )
+            select(MediaJob).where(MediaJob.deleted_at.is_not(None), MediaJob.deleted_at < cutoff)
         ).all()
         expired_ids = [j.id for j in expired]
 
@@ -65,11 +63,7 @@ def run_gc(state, dry_run: bool = False) -> dict[str, int]:  # noqa: ANN001
             session.execute(select(Asset.sha256, func.count()).group_by(Asset.sha256)).all()
         )
         to_unlink = sorted(
-            {
-                (sha, fn)
-                for sha, fn in candidates
-                if db_counts.get(sha, 0) - cand_counts[sha] == 0
-            }
+            {(sha, fn) for sha, fn in candidates if db_counts.get(sha, 0) - cand_counts[sha] == 0}
         )
 
         counts["expired_jobs"] = len(expired_ids)

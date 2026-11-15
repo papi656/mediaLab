@@ -99,9 +99,7 @@ class OpenRouterProvider(ImageProvider):
         if isinstance(usage, dict):
             raw_cost = usage.get("cost")
             cost = float(raw_cost) if isinstance(raw_cost, int | float) else None
-        return ProviderResult(
-            images=images, request_payload=payload, usage=usage, cost_usd=cost
-        )
+        return ProviderResult(images=images, request_payload=payload, usage=usage, cost_usd=cost)
 
     def _fetch_entry(self, entry: dict[str, Any]) -> ProviderImage:
         media_type = entry.get("media_type") or "image/png"
@@ -119,6 +117,4 @@ class OpenRouterProvider(ImageProvider):
                 got.raise_for_status()
         except httpx.HTTPError as exc:
             raise ProviderError("could not download generated image", {"error": str(exc)}) from exc
-        return ProviderImage(
-            got.content, got.headers.get("content-type", media_type).split(";")[0]
-        )
+        return ProviderImage(got.content, got.headers.get("content-type", media_type).split(";")[0])
