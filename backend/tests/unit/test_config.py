@@ -157,6 +157,36 @@ def test_a_blank_optional_value_means_unset():
     assert settings.resolved_cookie_secure is False
 
 
+def test_a_blank_numeric_or_bool_value_means_default():
+    """Same hazard as the optional fields, for the plain int/bool settings: a blank
+    Coolify variable must not exit the process on a parse error."""
+    settings = Settings(
+        _env_file=None,
+        provider="fake",
+        max_upload_mb="",
+        max_reference_bytes="",
+        storage_watermark_pct="",
+        enable_docs="",
+        session_days="",
+    )
+    assert settings.max_upload_mb == 10
+    assert settings.max_reference_bytes == 40 * 1024 * 1024
+    assert settings.storage_watermark_pct == 85
+    assert settings.enable_docs is False
+    assert settings.session_days == 7
+
+
+def test_the_resource_caps_must_be_usable_values():
+    for field in ("max_upload_mb", "max_reference_bytes", "max_n_hard_cap"):
+        with pytest.raises(ValidationError):
+            Settings(_env_file=None, provider="fake", **{field: 0})
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, provider="fake", storage_watermark_pct=0)
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, provider="fake", storage_watermark_pct=101)
+
+
 def test_the_documented_env_template_boots(monkeypatch):
     """`cp backend/.env.example backend/.env` is step one of the README."""
     for name in ("PROVIDER", "COOKIE_SECURE", "STATIC_DIR", "DAILY_BUDGET_USD", "DATA_DIR"):
@@ -169,3 +199,7 @@ def test_the_documented_env_template_boots(monkeypatch):
     assert settings.static_dir is None
     assert settings.daily_budget_usd is None
     assert settings.forwarded_allow_ips == "127.0.0.1,::1"
+    # D4's caps ship as real numbers, not blanks: they are what a deploy runs on.
+    assert settings.max_upload_mb == 10
+    assert settings.max_reference_bytes == 40 * 1024 * 1024
+    assert settings.storage_watermark_pct == 85

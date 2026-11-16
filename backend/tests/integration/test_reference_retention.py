@@ -14,6 +14,7 @@ from sqlalchemy import delete
 from app.clock import utcnow
 from app.gc import run_gc
 from app.models import Asset
+from app.storage import asset_path
 
 from ..helpers import wait_for_job
 
@@ -90,15 +91,37 @@ def test_a_reference_shared_by_a_retry_is_not_deleted_with_the_original(
         assert session.get(Asset, uploaded_asset["id"]) is not None
 
 
-def test_a_retry_with_a_vanished_reference_fails_loudly(auth, app, uploaded_asset):
-    """The old behaviour: silently generate from the prompt alone and call it a success."""
+def test_a_retry_naming_a_vanished_reference_is_refused_before_a_job_exists(
+    auth, app, uploaded_asset
+):
+    """The old behaviour: silently generate from the prompt alone and call it a success.
+
+    A reference whose row is gone is knowable at request time, so it is a 422 and no
+    job is created — the loudest, cheapest place to fail.
+    """
     job = _generate_with_reference(auth, uploaded_asset["id"])
     calls_before = len(app.state.provider.calls)
 
-    # Simulate the damage: the row is gone (pre-fix data, or a lost file).
     with app.state.sessionmaker() as session:
         session.execute(delete(Asset).where(Asset.id == uploaded_asset["id"]))
         session.commit()
+
+    retried = auth.post(f"/api/generations/{job['id']}/retry")
+
+    assert retried.status_code == 422
+    assert "unknown reference" in retried.text
+    assert len(app.state.provider.calls) == calls_before, "provider was called without its refs"
+
+
+def test_a_retry_whose_reference_file_is_gone_fails_loudly(auth, app, uploaded_asset):
+    """The row can outlive its file (disk damage, a manual delete). The job must fail
+    visibly instead of generating from the prompt alone and reporting success."""
+    job = _generate_with_reference(auth, uploaded_asset["id"])
+    calls_before = len(app.state.provider.calls)
+
+    with app.state.sessionmaker() as session:
+        asset = session.get(Asset, uploaded_asset["id"])
+        asset_path(app.state.settings.assets_dir, asset.sha256, asset.filename).unlink()
 
     retried = auth.post(f"/api/generations/{job['id']}/retry")
     assert retried.status_code == 202, retried.text

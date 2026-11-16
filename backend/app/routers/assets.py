@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import require_auth
 from ..db import db_session
+from ..limits import enforce_storage
 from ..models import Asset
 from ..schemas import AssetOut
 from ..storage import UnsupportedMediaType, asset_path, save_bytes, sniff_image_type
@@ -23,6 +24,9 @@ async def upload_reference(
 ) -> AssetOut:
     """Reference images are stored server-side and sent to the provider as data URLs."""
     settings = request.app.state.settings
+    # Refuse before reading the body: past the watermark the only thing an upload
+    # can do is fill the volume that SQLite's WAL lives on (D4).
+    enforce_storage(settings)
     limit = settings.max_upload_mb * 1024 * 1024
 
     data = await file.read(limit + 1)

@@ -41,7 +41,18 @@ class Settings(BaseSettings):
     # to boot otherwise — a skipped migration step must not become a runtime error.
     run_migrations_on_start: bool = True
     static_dir: Path | None = None  # built SPA, mounted at / when present
-    max_upload_mb: int = 20
+    # --- resource caps (D4) ---------------------------------------------
+    # Per-file upload cap. Cloudflare's Free plan caps request bodies at 100 MB
+    # anyway; 10 MB is generous for an img2img reference.
+    max_upload_mb: int = 10
+    # Total bytes of one job's references, before base64 (+33%) and the provider
+    # call. A request with 20 x 10 MB references would otherwise peak near 500 MB
+    # of RAM on a 2 GB box.
+    max_reference_bytes: int = 40 * 1024 * 1024
+    # Refuse new uploads/generations at or above this percentage of the data
+    # volume. GC is the only thing that reclaims space and it runs every
+    # `gc_interval_hours`, so the last 15% is headroom for WAL/GC/OS, not users.
+    storage_watermark_pct: int = 85
 
     # --- ingress --------------------------------------------------------
     # Which peers may set X-Forwarded-For. This is uvicorn's own env var, read by
@@ -83,6 +94,48 @@ class Settings(BaseSettings):
         """
         if isinstance(value, str) and not value.strip():
             return None
+        return value
+
+    @field_validator(
+        "session_days",
+        "run_migrations_on_start",
+        "max_upload_mb",
+        "max_reference_bytes",
+        "storage_watermark_pct",
+        "enable_docs",
+        "max_n_hard_cap",
+        "job_timeout_seconds",
+        "soft_delete_retention_days",
+        "gc_interval_hours",
+        "fake_latency_ms",
+        "fake_fail",
+        mode="before",
+    )
+    @classmethod
+    def _blank_uses_default(cls, value, info):  # noqa: ANN001
+        """A blank field in a deploy UI means "use the default", not a parse error.
+
+        Same failure the optional fields above had: a Coolify variable left empty
+        arrives as `", "`/`""` and pydantic exits the process on an int/bool parse
+        error before uvicorn can log anything. `COOKIE_SECURE=` was the measured
+        case; these are the ones that would fail the same way.
+        """
+        if isinstance(value, str) and not value.strip():
+            return cls.model_fields[info.field_name].default
+        return value
+
+    @field_validator("max_upload_mb", "max_reference_bytes", "max_n_hard_cap")
+    @classmethod
+    def _caps_are_positive(cls, value: int, info) -> int:  # noqa: ANN001
+        if value <= 0:
+            raise ValueError(f"{info.field_name} must be > 0")
+        return value
+
+    @field_validator("storage_watermark_pct")
+    @classmethod
+    def _watermark_is_a_percentage(cls, value: int) -> int:
+        if not 1 <= value <= 100:
+            raise ValueError("STORAGE_WATERMARK_PCT must be between 1 and 100")
         return value
 
     @field_validator("forwarded_allow_ips")

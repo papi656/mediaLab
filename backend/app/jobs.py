@@ -103,12 +103,15 @@ def run_job(state, job_id: str) -> None:  # noqa: ANN001
                 if asset is None:
                     missing.append(asset_id)
                     continue
-                references.append(
-                    (
-                        read_bytes(settings.assets_dir, asset.sha256, asset.filename),
-                        asset.content_type,
-                    )
-                )
+                try:
+                    data = read_bytes(settings.assets_dir, asset.sha256, asset.filename)
+                except FileNotFoundError:
+                    # A row can outlive its file (disk damage, a manual delete). Treat
+                    # it like a missing row so the job fails with a precise message
+                    # instead of "unexpected error".
+                    missing.append(asset_id)
+                    continue
+                references.append((data, asset.content_type))
             if missing:
                 # Fail visibly. Silently dropping a reference changes the output
                 # with no sign that anything went wrong.

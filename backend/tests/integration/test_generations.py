@@ -214,6 +214,21 @@ def test_retry_creates_a_new_job(auth):
     assert wait_for_job(auth, retried.json()["id"])["status"] == "succeeded"
 
 
+def test_retry_cannot_walk_around_the_daily_budget(settings, auth, app):
+    """Regression: retry copied params straight into a new job, skipping every
+    dispatch-time guard — including the spend cap. A button that bypasses the
+    budget is not a backstop."""
+    created = auth.post("/api/generations", json={"model": NO_REFS, "prompt": "paid"}).json()
+    assert wait_for_job(auth, created["id"])["status"] == "succeeded"
+
+    settings.daily_budget_usd = 0.001
+    retried = auth.post(f"/api/generations/{created['id']}/retry")
+
+    assert retried.status_code == 429
+    assert retried.json()["detail"]["limit_usd"] == 0.001
+    assert auth.get("/api/generations").json()["total"] == 1
+
+
 def test_usage_reflects_recorded_spend(auth):
     created = auth.post("/api/generations", json={"model": GEMINI, "prompt": "x"}).json()
     wait_for_job(auth, created["id"])

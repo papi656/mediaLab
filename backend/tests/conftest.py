@@ -26,6 +26,10 @@ def settings(tmp_path) -> Settings:
         gc_interval_hours=1000,
         soft_delete_retention_days=7,
         daily_budget_usd=None,
+        # Tests write bytes to a tmpdir that lives on the CI/dev volume, whose
+        # real fill level is not the test's business. The watermark itself is
+        # covered by test_limits.py with a patched `shutil.disk_usage`.
+        storage_watermark_pct=100,
     )
 
 
