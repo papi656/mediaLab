@@ -122,12 +122,18 @@ RUN_MIGRATIONS_ON_START=0          # the pre-deployment command migrates; with 0
 FORWARDED_ALLOW_IPS=<gateway>       # next section
 COOKIE_SECURE=true
 ENABLE_DOCS=0
-MAX_UPLOAD_MB=10
+MAX_UPLOAD_MB=10                    # D4: per-file
+MAX_REFERENCE_BYTES=41943040        # D4: 40 MiB across one job's references
+STORAGE_WATERMARK_PCT=85            # D4: 507 for new work above this fill level
 MAX_N_HARD_CAP=4
-JOB_TIMEOUT_SECONDS=120
+JOB_TIMEOUT_SECONDS=120              # provider HTTP timeout; raise it for slow models
 SOFT_DELETE_RETENTION_DAYS=7
 GC_INTERVAL_HOURS=6
 ```
+
+`MAX_UPLOAD_MB`, `MAX_REFERENCE_BYTES` and `STORAGE_WATERMARK_PCT` are the D4 caps.
+A blank value for any of them means "use the default" (the same rule as the optional
+fields), so a half-filled Coolify form still boots.
 
 ### Find `FORWARDED_ALLOW_IPS`
 
@@ -200,6 +206,18 @@ docker exec <container> ls -ln /data | head                 # medialab.db owned 
 # 6.7 the pre-deploy migration actually ran, and the container agreed with it
 docker exec <container> alembic current                     # 50a3ad53309a (head)
 docker exec <container> alembic heads                       # same revision
+
+# 6.8 the D4 caps are the ones in production, and the 413 path is live
+docker exec <container> python -c \
+  'from app.config import get_settings as g; s=g(); print(s.max_upload_mb, s.max_reference_bytes, s.storage_watermark_pct)'
+# -> 10 41943040 85
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://medialab.papi656.com/api/uploads \
+  -H "Cookie: __Host-ml_session=<from 6.3>" -H 'X-Requested-With: fetch' \
+  -F 'file=@/tmp/eleven-mb.png'                              # -> 413
+
+# 6.9 the backup has run and the repository is not empty
+RESTIC_REPOSITORY=... RESTIC_PASSWORD_FILE=... restic snapshots --tag medialab --latest 1
+# -> one snapshot, listing medialab.db and the assets directory
 ```
 
 `6.7` is what proves the pre-deployment command is wired up. If the two differ, the
@@ -223,18 +241,93 @@ curl -sS https://medialab.papi656.com/api/usage?period=day          # cost recor
 The server refuses to boot with `PROVIDER=openrouter` and no `DAILY_BUDGET_USD`, or with
 `FORWARDED_ALLOW_IPS=*`. That is intentional; a failed deploy is cheaper than a wrong one.
 
-## 8. Still missing before this is a finished deployment
+## 8. Backups (D9)
+
+All state is one SQLite file plus content-addressed assets on one volume. `cp` on a
+live WAL database produces a torn copy, so `scripts/backup.sh` uses SQLite's online
+backup API, checks the copy with `PRAGMA integrity_check`, and ships it with the assets
+in one restic snapshot. Assets are immutable and content-addressed, so dedupe makes the
+daily snapshot cheap after the first.
+
+### 8.1 One-time setup
+
+```bash
+# On the host. restic is a single static binary.
+sudo apt-get install -y restic sqlite3
+
+# Credentials + repository password (a bearer secret: chmod 600, never commit).
+sudo install -d -m 700 /etc/medialab
+sudo install -m 600 deploy/medialab-backup.env.example /etc/medialab/backup.env
+sudo sh -c 'openssl rand -base64 32 > /etc/medialab/restic-password && chmod 600 /etc/medialab/restic-password'
+sudo editor /etc/medialab/backup.env      # B2 bucket, application key, password file
+
+# The scripts the units call. Kept outside /srv/medialab/data so a restore never
+# overwrites the code that performs it.
+sudo install -d -m 755 /opt/medialab/scripts
+sudo install -m 755 scripts/backup.sh scripts/restore.sh /opt/medialab/scripts/
+
+# Initialise the repository once (fails harmlessly if it already exists).
+sudo sh -c 'set -a; . /etc/medialab/backup.env; set +a; restic init'
+
+# Prove it works before trusting a timer with it.
+sudo /opt/medialab/scripts/backup.sh
+sudo systemctl daemon-reload
+sudo cp deploy/systemd/medialab-backup*.{service,timer} /etc/systemd/system/
+sudo systemctl enable --now medialab-backup.timer medialab-backup-prune.timer
+systemctl list-timers 'medialab-*'
+```
+
+Retention is **7 daily / 4 weekly / 3 monthly**, applied by `restic forget` on every
+run. `prune` (which rewrites pack files and costs object-store transactions) runs
+weekly from its own unit, `medialab-backup-prune.service`.
+
+> The restic password is the only thing that can decrypt the repository. Store a copy
+> off this VPS (password manager). Losing it loses every backup; there is no reset.
+
+### 8.2 The restore drill — part of the definition of done
+
+A backup that has never been restored is a hypothesis.
+
+```bash
+# 1. Restore the latest snapshot into a directory shaped like /data.
+sudo /opt/medialab/scripts/restore.sh /srv/medialab/restore-check
+# -> restored: integrity=ok, job_rows=…, asset_rows=…, asset_files=…
+
+# 2. Mount it into a scratch container on a spare loopback port. Never over the
+#    live volume, never on 8000 (the connector dials that port).
+docker run --rm -d --name medialab-restore \
+  -p 127.0.0.1:8010:8000 \
+  -e PROVIDER=fake -e DATA_DIR=/data -e STATIC_DIR=/app/static \
+  -e ADMIN_PASSWORD=drill -e RUN_MIGRATIONS_ON_START=0 \
+  -v /srv/medialab/restore-check:/data <image>
+
+# 3. Log in, open a job that existed before the backup, and confirm the image bytes
+#    render. History without images is not a restore.
+open http://127.0.0.1:8010  # or: docker exec medialab-restore ls -ln /data/assets | head
+
+# 4. Compare a known asset against the live volume.
+docker exec medialab-restore sh -c 'sha256sum /data/assets/ab/*.png' \
+  && docker exec <live-container> sh -c 'sha256sum /data/assets/ab/*.png'
+
+docker rm -f medialab-restore
+sudo rm -rf /srv/medialab/restore-check
+```
+
+Record the date of the last successful drill here in the repo's decision log. Monthly is
+enough for a single-operator service; re-run it after any restic or schema change.
+
+## 9. Still missing before this is a finished deployment
 
 | Decision | State |
 | --- | --- |
-| D4 — disk/RAM caps (watermark `507`, reference-bytes cap) | **not implemented**; only `MAX_UPLOAD_MB` and `--limit-concurrency 8` exist |
+| D4 — disk/RAM caps | **implemented**; `MAX_UPLOAD_MB`, `MAX_REFERENCE_BYTES`, `STORAGE_WATERMARK_PCT` (`507`) and `--limit-concurrency 8`; run §6.8 against the live container |
 | D7 — Alembic migrations | **implemented**; only the failed-migration/redeploy check is unrun, and it needs a VPS (§6.7 proves the happy path) |
-| D9 — off-host backup + restore drill | **not implemented**; `/data` has no copy off the VPS |
+| D9 — off-host backup + restore drill | **implemented**; the drill in §8.2 still has to be run on the VPS once the bucket exists |
 | D11 — deploy interrupts in-flight jobs | accepted; the job shows `interrupted` and Retry is the path |
 
 `docker compose down -v` on the local stack is not a backup.
 
-Adding a migration locally:
+### 9.1 Adding a migration locally
 
 ```bash
 cd backend
@@ -249,7 +342,7 @@ while the *old* container is still serving, so a rename or a drop in the same de
 adds its replacement breaks the running container mid-deploy. Add the column, backfill,
 switch the code in a later release, drop the old column last.
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
@@ -260,8 +353,12 @@ switch the code in a later release, drop the old column last.
 | `docker exec <c> id` says `uid=0` | Coolify overrode `USER` | the no-root fork in D6; either fix Coolify's setting or accept a root-then-drop entrypoint |
 | `Permission denied` writing `/data` | bind mount not chowned to 10001 | `sudo chown -R 10001:10001 /srv/medialab/data` |
 | Container exits 1: `database schema is not at head` | `RUN_MIGRATIONS_ON_START=0` and the pre-deployment command did not run or failed | fix the Pre-deployment Command (`alembic upgrade head`), redeploy; the container is deliberately refusing rather than serving a schema it does not know |
+| `413` on upload | file over `MAX_UPLOAD_MB` (10) | expected; shrink the reference |
+| `422` with `limit_bytes` on a generation | this job's references total more than `MAX_REFERENCE_BYTES` (40 MiB) | use fewer/smaller references; the cap bounds the base64 (+33%) memory a single call can hold |
+| `507` on upload/generate | the volume is at `STORAGE_WATERMARK_PCT` (85%) | delete generations or wait for GC; check with `df -h /srv/medialab/data`. Do not raise the watermark to "fix" it — the last 15% is the WAL/GC headroom |
+| `medialab-backup.service` fails | restic credentials, network, or the repository was never `init`-ed | `journalctl -u medialab-backup -n 50`; test by hand with `sudo /opt/medialab/scripts/backup.sh` |
 
-## 10. Adding a second service later
+## 11. Adding a second service later
 
 1. Pick an unused loopback port (`8001`).
 2. Publish the new app as `127.0.0.1:8001:<port>` in Coolify, no domain.

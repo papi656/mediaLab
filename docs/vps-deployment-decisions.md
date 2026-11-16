@@ -1,9 +1,10 @@
 # mediaLab — VPS deployment decisions (Coolify)
 
-**Status:** 12 decisions, 3 open questions, 6 closed questions. D1, D2, D3, D5, D6, D7, D8,
-D10 and D12 are **implemented**; D4 and D9 are open, and D11's interruption test has not
-been run.
-**Date:** 2026-11-05 (D12 and the ingress rewrite: 2026-11-15)
+**Status:** 12 decisions, 3 open questions, 6 closed questions. **D1–D10 and D12 are
+implemented and verified locally**; D11 is decided with its interruption test still
+unrun. What remains is VPS-side by nature: Q1 (the Docker gateway), Q2 (a backup
+bucket), Q3 (the budget number), and the runbook checks that need a live host.
+**Date:** 2026-11-05 (D4/D9 and the ingress rewrite: 2026-11-15 — 2026-11-16)
 **Scope:** everything standing between `main` and a real deploy on a VPS managed by
 Coolify, reached through a Cloudflare Tunnel. Functional correctness is *not* in
 question: the built image was run locally, and login → generate → `succeeded` worked
@@ -69,6 +70,33 @@ stays honest.
 | `alembic check` after `upgrade head` | `No new upgrade operations detected` | ok |
 | Tunnel path end-to-end on the VPS | runbook §6, **not yet run** | pending |
 
+### 0.2 Re-verified after D4 (caps) and D9 (backups), 2026-11-16
+
+The last two implementation gaps are closed. Measured locally, against this tree.
+
+| Check | Result | Verdict |
+| --- | --- | --- |
+| `uv run pytest` | **125 passed, 4 deselected** | ok |
+| 11 MB upload with `MAX_UPLOAD_MB=10` | `413` | **fixed** |
+| 5 × 9 MB references on one job (45 MB, each file under the per-file cap) | `422`, `total_bytes=47185920`, `limit_bytes=41943040` | **fixed** |
+| Volume at 90% used + upload | `507`, body carries `used_pct`/`limit_pct`/`free_bytes` | **fixed** |
+| Volume at 90% used + generation | `507`, no job created | **fixed** |
+| Volume at 90% used + **retry** | `507` — retry is not a way around the watermark | **fixed** |
+| Volume at 85% exactly | refused (the boundary is inclusive) | ok |
+| `/health` with the volume at 100% | `200` — a full disk must not look like a dead process | ok |
+| `retry` with `DAILY_BUDGET_USD` just lowered | `429`, no new job — **retry used to copy params straight into a new job and skip every dispatch guard, including the spend cap** | **fixed** |
+| retry whose reference row still exists but whose file is gone | job fails with `missing_reference_asset_ids`, not `unexpected error while generating` | **fixed** |
+| `scripts/backup.sh` against a real restic repo | snapshot holds `medialab.db` + `assets/`; `PRAGMA integrity_check` = `ok` before shipping | ok |
+| `scripts/restore.sh` into an empty dir | `integrity=ok`, `job_rows=1`, `asset_rows=1`, `asset_files=1`, asset sha256 **identical** to the source | ok |
+| `restore.sh` into a dir that already has `medialab.db` | exits 1 — cannot be pointed at live `/data` by accident | ok |
+| `backup.sh` with no `RESTIC_REPOSITORY` / no password | exits 1 with a one-line cause | ok |
+| `PRUNE=1` weekly run | `restic forget` 7d/4w/3m then `restic prune` | ok (review caught `prune --tag`, which restic rejects) |
+| `ruff check`, `ruff format --check` | clean (50 files) | ok |
+| CI (`.github/workflows/ci.yml`) | backend lint+format+pytest+`alembic check`, frontend typecheck+lint+build, and a Docker build that boots the image, asserts `/health`, `/api/docs` 404 and uid 10001 | added, first run pending |
+
+The D4/D9 rows that need a live volume (413/507 against the real container, the restore
+drill with a real bucket) stay in runbook §6.8 and §8.2.
+
 ---
 
 ## 1. Decision log
@@ -78,12 +106,12 @@ stays honest.
 | D1 | Ingress is the Cloudflare Tunnel; the container port is published on **loopback only** | ✅ done |
 | D2 | `FORWARDED_ALLOW_IPS` names one peer (the Docker gateway), never `*`; rejected at startup | ✅ done |
 | D3 | Cookies are always `Secure` (+ `__Host-` prefix); never inferred from a spoofable header | ✅ done |
-| D4 | Bound the two resources that can kill the VPS: disk and RAM | decided |
+| D4 | Bound the two resources that can kill the VPS: disk and RAM | ✅ done |
 | D5 | A spend cap is mandatory when `PROVIDER=openrouter` | ✅ done |
 | D6 | Container runs as non-root (uid 10001); `/data` is a host bind mount, pre-chowned | ✅ done in the image; VPS steps in runbook §4 |
 | D7 | Alembic from day one, run as a Coolify pre-deploy command (not at container start) | ✅ done |
 | D8 | Production config lives in Coolify env vars; `docker-compose.yml` is local-dev only | ✅ done |
-| D9 | Nightly consistent SQLite backup + asset sync, off-host, with a restore drill | **not implemented** |
+| D9 | Nightly consistent SQLite backup + asset sync, off-host, with a restore drill | ✅ done (drill script verified locally; needs a bucket) |
 | D10 | `/api/docs` and `/api/openapi.json` are off unless `ENABLE_DOCS=1` | ✅ done |
 | D11 | Single replica, `--workers 1`; deploys interrupt in-flight jobs (accepted v1 cost) | decided, runbook §4 |
 | D12 | Ingress is a **Cloudflare Tunnel** (host connector, ingress table in git), not Traefik | ✅ done |
@@ -188,7 +216,7 @@ double-name logout. On the VPS: runbook §6.3.
 
 ---
 
-### D4 — Bound disk and RAM, because both are shared with the host
+### D4 — Bound disk and RAM, because both are shared with the host — ✅ done
 
 **Problem.** Nothing limits total bytes. `MAX_UPLOAD_MB=20` is per file, up to 20
 references per request, and every reference is read fully into memory and base64-encoded
@@ -197,13 +225,13 @@ on job count, and soft-deleted jobs keep their files for 7 days. On a 2 GB VPS w
 40 GB disk, one leaked session is enough to OOM the box and then fill the volume —
 taking SQLite's WAL with it.
 
-**Decision.** Three limits, all in `Settings`, all enforced server-side:
+**Decision.** Four limits, all in `Settings`, all enforced server-side:
 
-| Setting | Value | Enforced in |
+| Setting | Default | Enforced in |
 | --- | --- | --- |
-| `MAX_UPLOAD_MB` | `10` (was 20) | `routers/assets.py`, already — **still 20 in code and in `backend/.env.example`; only the runbook sets 10** |
-| `MAX_REFERENCE_BYTES` | `40 MiB` total across a job's references | `capabilities.validate_request` |
-| `STORAGE_WATERMARK_PCT` | `85` — refuse new uploads/generations above it | `routers/assets.py`, `routers/generations.py` via `shutil.disk_usage(data_dir)` |
+| `MAX_UPLOAD_MB` | `10` (was 20) | `routers/assets.py` |
+| `MAX_REFERENCE_BYTES` | `40 MiB` total across a job's references | `routers/generations.py` (`_guard_dispatch`) |
+| `STORAGE_WATERMARK_PCT` | `85` — refuse new uploads/generations above it | `app/limits.py` via both routers |
 | `--limit-concurrency` | `8` | Dockerfile `CMD` |
 
 The watermark, not a hard quota: GC is the only thing that reclaims space, and it runs
@@ -218,8 +246,35 @@ users. Concurrency 8 bounds worst-case RAM near 1 GB instead of unbounded.
 storage. Both are real fixes for a *multi-operator* service; this is a single-operator
 one, and the caps above are cheaper than the rewrite.
 
-**Verify.** `POST /api/uploads` with a 15 MB file → `413`. Fill `/data` past 85% in a
-scratch container → uploads and generations return `507`, health still `200`.
+**What landed (2026-11-16).**
+
+- `app/limits.py` — `DiskUsage` (with `used_pct`), `require_storage`, and `enforce_storage`.
+  The last one is the HTTP adapter: a volume at or above the watermark is a **`507`**
+  whose body carries `used_pct`, `limit_pct` and `free_bytes`, so the UI/curl can say
+  what to do instead of "request failed". A zero-sized volume counts as *full*, because
+  it cannot be proven to have room.
+- The reference-bytes cap lives in `routers/generations.py`, not in
+  `capabilities.validate_request` as originally sketched: capabilities describe a
+  **model**, and a job's total bytes are a fact about **stored assets**, which requires
+  the session. `_guard_dispatch` is now the single place `create` and `retry` pass
+  through, so the two paths cannot drift.
+- **Retry was a hole in two caps.** It copied `params` into a new job and dispatched,
+  skipping the capability check, the `MAX_N_HARD_CAP` check and — the expensive one —
+  the daily budget. A cap a button can walk around is not a cap; retry now runs the
+  same guards. Pinned by `test_retry_cannot_walk_around_the_daily_budget`.
+- `tests/conftest.py` sets `storage_watermark_pct=100` so the suite does not depend on
+  how full the CI/dev volume is; the real 85 boundary is pinned in
+  `tests/integration/test_limits.py` with a patched `shutil.disk_usage`.
+- A reference whose row exists but whose **file** is gone used to surface as
+  `unexpected error while generating`; it now fails as `missing_reference_asset_ids`,
+  the same precise shape as a missing row (`jobs.py`).
+- `MAX_UPLOAD_MB=10` is now the value in `config.py`, `.env.example` and the runbook —
+the deliberate drift noted in §8 is gone.
+
+**Verify.** `tests/integration/test_limits.py`: 11 MB upload → `413`; 45 MB of
+references on one job → `422` with `limit_bytes`; a mocked 90%-full volume → `507` for
+upload, generation **and retry**; `/health` still `200` at 100%; the 85% boundary is
+inclusive. On the live container: runbook §6.8.
 
 ---
 
@@ -425,29 +480,60 @@ backend/.env`. `docker run --env-file backend/.env` boots; no `.env` exists in t
 
 ---
 
-### D9 — Off-host backups, taken consistently
+### D9 — Off-host backups, taken consistently — ✅ done
 
 **Problem.** All state is one SQLite file (WAL mode) plus content-addressed assets on one
 volume on one VPS. There is no backup, and a `cp medialab.db` on a live WAL database
 produces a torn copy.
 
-**Decision.** A host-side script (`scripts/backup.sh`, cron via Coolify's scheduled task
-or systemd timer):
+**Decision.** Two host-side scripts plus systemd units in git:
 
-1. `sqlite3 /srv/medialab/data/medialab.db ".backup '/tmp/medialab.db'"` — the online
-   backup API, WAL-safe.
-2. `restic` (or `rclone`) ships `/tmp/medialab.db` plus `assets/` to off-host storage.
-   Assets are immutable and content-addressed, so incremental dedupe is essentially free.
+1. `scripts/backup.sh` — `sqlite3 "$DB" ".backup …"` (the online backup API, WAL-safe),
+   `PRAGMA integrity_check` on the **sealed copy** before it leaves the host, then one
+   `restic backup` containing the database and `assets/` so a single snapshot is always
+   a consistent pair. Retention 7 daily / 4 weekly / 3 monthly via `restic forget`;
+   `prune` runs weekly from a second unit because it rewrites pack files and costs
+   object-store transactions.
+2. `scripts/restore.sh` — restores a snapshot into a directory shaped exactly like the
+   container's `/data`, runs `integrity_check`, and refuses any target that already has a
+   `medialab.db` (so it cannot be pointed at the live volume).
 
-Retention: 7 daily, 4 weekly, 3 monthly. The assets directory is the expensive part —
-restoring the DB alone restores history, not images, so a restore drill must check both.
+Assets are immutable and content-addressed, so incremental dedupe is essentially free.
 
-**Consequences.** A backup that has never been restored is a hypothesis. The drill is
-part of the definition of done: restore into a scratch container, log in, open a
-pre-deploy job, and confirm the image bytes render.
+**Consequences.** A backup that has never been restored is a hypothesis, so the restore
+drill is part of the definition of done (runbook §8.2): restore into a scratch container,
+log in, open a pre-deploy job, and confirm the image bytes render. Restoring the DB
+alone restores history, not images, which is why both live in one snapshot.
 
-**Verify.** `bash scripts/backup.sh` → snapshot listed; restore into a scratch container
-and diff a known asset's `sha256` against the source.
+**What landed (2026-11-16).**
+
+- `scripts/backup.sh` — lock file (`flock`) so a timer and a manual run cannot overlap; a
+  **fixed** staging path (`/var/tmp/medialab-backup`) because restic records absolute
+  paths and a stable one keeps `restore.sh` predictable; a hard failure when the copy
+  fails `integrity_check` (a snapshot of a corrupt database is worse than none, because
+  it looks like a backup); and a final `restic snapshots --latest` check so a silent
+  no-op is visible instead of reporting success.
+- `scripts/restore.sh` — derives the assets path the same way `backup.sh` does, so the
+  two cannot drift when `DATA_DIR` is overridden; removes stale `-wal`/`-shm` siblings
+  (SQLite would otherwise replay a WAL belonging to a different database file); prints
+  row and file counts to compare against the source.
+- `deploy/systemd/medialab-backup.{service,timer}` (daily 03:20 UTC) and
+  `medialab-backup-prune.{service,timer}` (Sunday 04:20 UTC), plus
+  `deploy/medialab-backup.env.example` for the B2/restic credentials.
+
+**Measured (local restic 0.19.1 repository, real schema, real snapshot).**
+
+| Check | Result |
+| --- | --- |
+| `backup.sh` | snapshot saved; `integrity=ok, jobs=1`; 2 files, 64 KiB |
+| `restore.sh` into an empty dir | `integrity=ok, job_rows=1, asset_rows=1, asset_files=1` |
+| asset sha256, restored vs source | identical |
+| `restore.sh` onto a dir with an existing `medialab.db` | exits 1 (protects live `/data`) |
+| `backup.sh` without `RESTIC_REPOSITORY` / password | exits 1, one-line cause |
+| `PRUNE=1` | `restic forget` then `restic prune`; found `prune --tag` is not a restic flag and fixed |
+
+**Verify.** Runbook §8.2 on the VPS once there is a bucket (Q2). Until then the scripts
+are proven against a local repository, not against B2.
 
 ---
 
@@ -640,25 +726,31 @@ the corresponding §1 row, and say so here rather than re-litigating it.
 | D1 ✅ | `docker-compose.yml`, runbook §4 | `ports:` bound to `127.0.0.1`; no Coolify domain |
 | D2 ✅ | `Dockerfile`, `config.py`, `main.py` | `FORWARDED_ALLOW_IPS` (uvicorn's own env var), `*` rejected, startup warning when loopback-only |
 | D3 ✅ | `config.py`, `auth.py`, `routers/auth.py`, `tests/conftest.py` | `COOKIE_SECURE` + `__Host-`, dual-name read/delete, `_is_secure()` gone |
-| D4 ◐ | `config.py`, `capabilities.py`, `routers/{assets,generations}.py` | only `--limit-concurrency 8` landed; watermark + reference-bytes cap **missing** |
+| D4 ✅ | `config.py`, `limits.py`, `routers/{assets,generations}.py`, `tests/integration/test_limits.py` | `MAX_UPLOAD_MB=10`, `MAX_REFERENCE_BYTES`, `STORAGE_WATERMARK_PCT` (`507`), `--limit-concurrency 8`; retry now passes the same guards as create |
 | D5 ✅ | `config.py` | `DAILY_BUDGET_USD` mandatory for `openrouter` |
 | D6 ✅ | `Dockerfile`, runbook §4 | `USER 10001` via `COPY --chown`, `/data` chowned, loopback publish |
 | D7 ✅ | `alembic.ini`, `migrations/`, `db.py`, `main.py`, `config.py`, `Dockerfile`, `tests/unit/test_migrations.py`, `pyproject.toml` | Alembic, `upgrade head`, `RUN_MIGRATIONS_ON_START`, `require_at_head` |
 | D8 ✅ | `docker-compose.yml`, `.env.example` | local-dev compose reads `backend/.env`; Coolify owns prod env |
-| D9 ✗ | `scripts/backup.sh` | backup + restore drill — **not started** |
+| D9 ✅ | `scripts/backup.sh`, `scripts/restore.sh`, `deploy/systemd/medialab-backup*`, `deploy/medialab-backup.env.example` | SQLite online backup + integrity check + restic snapshot (7d/4w/3m), weekly prune, restore drill |
 | D10 ✅ | `main.py`, `config.py` | `ENABLE_DOCS` |
 | D11 ◐ | `Dockerfile`, runbook §4 | replica/zero-downtime off documented; interruption test still pending |
 | D12 ✅ | `deploy/cloudflared/config.yml`, `docs/vps-runbook.md` | host connector, ingress table in git |
 
-Tests that now hold these decisions down (112 pass, 4 deselected):
+Tests that now hold these decisions down (125 pass, 4 deselected):
 
 - `test_config.py`: openrouter without a budget → `ValueError`; `FORWARDED_ALLOW_IPS` of
-  `*`, `172.17.0.1, *`, or `" , "` → `ValueError`; cookie security follows the provider.
+  `*`, `172.17.0.1, *`, or `" , "` → `ValueError`; cookie security follows the provider;
+  blank numeric/bool env values fall back to the default instead of exiting on a parse
+  error; the D4 caps reject `0` and a watermark outside `1..100`.
 - `test_ingress_hardening.py`: `__Host-ml_session=` + `Secure` + `HttpOnly` + `Path=/` and
   no `Domain`; legacy unprefixed cookie still authenticates; logout clears both shapes;
   `/api/docs` is `404` unless `ENABLE_DOCS=1`.
-- `test_assets.py`: 15 MB upload → `413`; 41 MiB of references → `422`; watermark → `507`
-  (**still to write**, with D4).
+- `test_limits.py`: 11 MB upload → `413`; 45 MB of references → `422` with
+  `total_bytes`/`limit_bytes`; a patched 90%-full volume → `507` for upload, generation
+  and retry; `/health` still `200` at 100%; the 85% boundary is inclusive.
+- `test_generations.py`: retry cannot bypass the daily budget; `test_reference_retention.py`
+  pins both missing-reference shapes (row gone → `422` at request time; file gone → job
+  fails with `missing_reference_asset_ids`).
 
 ## 5. Production environment
 
@@ -674,9 +766,9 @@ DAILY_BUDGET_USD=<Q3>                     ⚠  (D5)
 DATA_DIR=/data
 STATIC_DIR=/app/static
 RUN_MIGRATIONS_ON_START=0                (D7 — the pre-deploy command migrates instead)
-MAX_UPLOAD_MB=10
-MAX_REFERENCE_BYTES=41943040              (D4, not implemented yet)
-STORAGE_WATERMARK_PCT=85                 (D4, not implemented yet)
+MAX_UPLOAD_MB=10                          (D4 — per file)
+MAX_REFERENCE_BYTES=41943040              (D4 — 40 MiB across one job's references)
+STORAGE_WATERMARK_PCT=85                  (D4 — 507 for new work above this fill level)
 FORWARDED_ALLOW_IPS=<Q1 gateway>          ⚠  (D2 — one address, never '*')
 COOKIE_SECURE=true
 ENABLE_DOCS=0
@@ -698,7 +790,9 @@ bcrypt hash is the only credential.
   enough; the whole subnet is not needed. Re-read it if the Docker network is ever
   recreated.
 - **Q2 — backup target.** restic to Backblaze B2 is the default assumption (cheap,
-  append-only via application keys). Needs a bucket and a key before D9 can be closed.
+  append-only via application keys). The scripts and units are written and verified
+  against a local repository; what is missing is a bucket and an application key, then
+  the drill in runbook §8.2.
 - **Q3 — `DAILY_BUDGET_USD`.** A number, chosen with knowledge of the models actually
   used: `curl /api/usage?period=month` after a week of local use gives the honest figure.
 - ~~**Q4 — Cloudflare proxy mode (proxied vs DNS-only).**~~ **Closed by D12.** A tunnel
@@ -716,8 +810,9 @@ bcrypt hash is the only credential.
 
 Ordered so that each step's verification is meaningful before the next step runs.
 
-1. ✅ **Landed**: D1, D2, D3, D5, D6, D8, D10, D12. Verified by `uv run pytest` (103
-   pass) and a `docker build` — not yet by a deploy.
+1. ✅ **Landed**: D1–D10 and D12. Verified by `uv run pytest` (125 pass), `ruff check` /
+   `ruff format --check`, `alembic check`, a `docker build`, and a real restic
+   backup→restore round trip — not yet by a deploy.
 2. **Connector up** (runbook §1–§3): binary installed, tunnel created, DNS record routed,
    `journalctl -u cloudflared` shows registered connections. No app required yet — the
    ingress can be proven with `http_status:404`.
@@ -727,9 +822,11 @@ Ordered so that each step's verification is meaningful before the next step runs
 4. ✅ **D7 (Alembic)** landed before any production row exists, which was the whole point:
    `create_all` never alters a table, so the first added column would have shipped to a
    database that could not accept it.
-5. **D4 (caps)** — verify the `413`/`507` paths against the live container.
-6. **D9 (backup)** — once there is state worth keeping, then run the restore drill. A
-   backup that has never been restored is a hypothesis.
+5. ✅ **D4 (caps)** implemented and pinned by tests; runbook §6.8 confirms the deployed
+   container has `10 / 41943040 / 85` and answers `413` to an 11 MB upload.
+6. ✅ **D9 (backup)** implemented; scripts verified against a real repository. On the VPS
+   it closes only when runbook §8.2 has been *run* — a backup that has never been
+   restored is a hypothesis.
 7. **Flip to `PROVIDER=openrouter`** (runbook §7), one cheap generation, then D11's
    interruption test: start a job, redeploy, confirm `interrupted` + Retry works.
 8. Optional: **Cloudflare Access** (Q5), then re-run §6.3 — the cookie should still be
@@ -741,25 +838,24 @@ Until step 7 the deployment is a `fake`-provider staging environment that costs 
 
 Recorded so that a later reader does not mistake work-in-progress for a decision.
 
-Updated 2026-11-15, after the ingress rewrite.
+Updated 2026-11-16, after D4 and D9 landed.
 
 - **Implemented and reviewed here**: `FORWARDED_ALLOW_IPS` + `*` rejection, cookie
   hardening (`COOKIE_BASE`/`cookie_name`/`read_session_token`), `ENABLE_DOCS`, the
   mandatory budget, the non-root runtime stage, the loopback compose bind,
-  `deploy/cloudflared/config.yml` and `docs/vps-runbook.md`.
+  `deploy/cloudflared/config.yml`, `docs/vps-runbook.md`, the D4 caps
+  (`app/limits.py` + both routers) and the D9 backup/restore scripts.
 - **Committed as the deployable baseline**: everything above, the `e2e` marker in
   `backend/pyproject.toml`, the `backend/tests/e2e/` CDP suite, this document, the runbook
   and `deploy/cloudflared/config.yml`. `main` now builds the image described in §0/§0.1 —
   before that, deploying `main` shipped the root/`*`-trusted/published-port container.
   (This bullet used to say "uncommitted"; it was the most important item here, because a
   Coolify build reads git and nothing else.)
-- **Blank optional env values are now "unset"**, not a parse error (`config.py`'s
-  `_blank_is_none`, pinned by `test_a_blank_optional_value_means_unset` and
-  `test_the_documented_env_template_boots`). `COOKIE_SECURE=` as shipped in
-  `.env.example` exited the container on a bool-parsing error before; the README's first
-  command (`cp .env.example .env`) now produces a config that boots, and a blank field in
-  the Coolify UI is harmless. Any future non-string optional field must join that
-  validator.
+- **Blank env values are "unset" or "default", never a parse error.** `config.py` has two
+  validators: `_blank_is_none` for genuinely optional fields (`COOKIE_SECURE`,
+  `DAILY_BUDGET_USD`, `STATIC_DIR`) and `_blank_uses_default` for every non-optional
+  int/bool (`MAX_UPLOAD_MB`, `STORAGE_WATERMARK_PCT`, `session_days`, …). A Coolify form
+  with a half-filled row still boots. Any new setting must join one of the two.
 - **`init_db()` is `alembic upgrade head`** and there is no `create_all` path left, so
   tests and local dev built the same schema a deploy builds. `backend/data/medialab.db`
   (gitignored) predates the first revision and is disposable: delete it rather than stamp
@@ -768,11 +864,18 @@ Updated 2026-11-15, after the ingress rewrite.
 - **`docker compose config` now succeeds** on a clean clone once
   `cp backend/.env.example backend/.env` exists, because `env_file` points at
   `backend/.env` (D8).
-- **`MAX_UPLOAD_MB` is still 20 in `config.py` and `.env.example`** while runbook §4 and
-  §5 say 10 — deliberate drift only until D4 lands; the env var is the one that matters at
-  runtime, so the deployed container gets 10 whichever way round it is.
-- **Formatting is a no-op gate right now**: `uv run ruff check` passes, and the tree is
-  `ruff format`-clean as of this baseline, so a future CI step can enforce both.
+- **`MAX_UPLOAD_MB=10` is now consistent** across `config.py`, `.env.example`, the runbook
+  and D4 — the deliberate drift this bullet used to record is gone.
+- **`storage_watermark_pct` is part of the test fixture's settings** (`100`), because a
+  suite whose result depends on how full the CI volume is would fail for the wrong reason.
+  The real 85 boundary is pinned with a patched `shutil.disk_usage`.
+- **CI exists** (`.github/workflows/ci.yml`): backend `ruff check` + `ruff format
+  --check` + `pytest` + `alembic check`, frontend `typecheck`/`lint`/`build`, and a Docker
+  build that boots the image and asserts `/health`, `/api/docs` → `404`, uid `10001` and a
+  writable `/data`. The formatting gate this bullet used to call "a future CI step" is
+  now enforced.
+- **The backup runs from `/opt/medialab/scripts`**, not from `/srv/medialab/data` — a
+  restore must never overwrite the code that performs it.
 - **The container publishes on loopback**, so a local `docker compose up` is reachable at
   `http://127.0.0.1:8000` and from nowhere else. That is the production shape too.
 - The catalogue's `generated_at` is still `2026-11-02`. No action; noted so a
@@ -782,6 +885,7 @@ Updated 2026-11-15, after the ingress rewrite.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-16 | **D4 and D9 implemented — the last two code gaps.** D4: `MAX_UPLOAD_MB=10`, `MAX_REFERENCE_BYTES` (40 MiB per job, enforced in `routers/generations.py` because it is a fact about stored bytes, not a model capability), `STORAGE_WATERMARK_PCT=85` with a `507` body carrying the current fill level, in `app/limits.py`; uploads guard before reading the body; **retry now runs the same dispatch guards as create**, closing a daily-budget bypass (pinned by a test); a missing reference *file* now fails as `missing_reference_asset_ids`. D9: `scripts/backup.sh` (SQLite online backup → `integrity_check` → one restic snapshot of db + assets, 7d/4w/3m, weekly prune) and `scripts/restore.sh` (restores into a `/data`-shaped dir, refuses to overwrite an existing db), with systemd units in `deploy/systemd/`. Verified locally against a real restic 0.19.1 repository: restore sha256 identical, integrity ok. Also added CI (`.github/workflows/ci.yml`: backend lint+format+pytest+`alembic check`, frontend typecheck+lint+build, Docker build + boot/smoke). Measurements in §0.2. |
 | 2026-11-05 | Created. Baseline verified against a real build; D1–D11 recorded; §2 context and §3 answers added after review, so the same questions are not asked twice. |
 | 2026-11-05 | D6: six-step no-root confirmation added. D7: migrations moved from the container entrypoint to a Coolify pre-deploy command, so a failed migration aborts the deploy instead of causing downtime; migrations are now required to be backward-compatible (expand-then-contract). Pre-Alembic local DB declared disposable — no `stamp head` path. |
 | 2026-11-16 | **D7 implemented.** Alembic with one autogenerated initial revision (`50a3ad53309a`), `init_db()` = `upgrade head` on the caller's connection, no `create_all` left; `alembic.ini` carries no URL so `DATA_DIR` stays the single owner; `RUN_MIGRATIONS_ON_START` (default `1`) plus `require_at_head()` gives production the pre-deploy shape and turns a skipped migration into a startup failure instead of a runtime one; `alembic.ini` + `migrations/` added to the image. Measured: empty `/data` migrates as uid 10001, a stale schema exits **1**, `alembic check` is clean. Still unrun: the failed-migration/redeploy check, which needs the VPS. |

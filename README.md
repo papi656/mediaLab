@@ -18,7 +18,13 @@ than a migration.
   the upload control appears only for models that accept references.
 - **Async jobs.** `POST` returns a job id; the UI polls. Video will reuse the same path.
 - **History** with soft delete, 5-second Undo, and a background GC that reclaims disk.
-- **Per-job cost** recorded from the provider's own `usage`, plus an optional daily cap.
+- **Per-job cost** recorded from the provider's own `usage`, plus a mandatory daily cap
+  for real deployments.
+- **Bounded by construction:** 10 MB per upload, 40 MiB of references per generation, and
+  new work is refused with `507` once the data volume is 85% full. "Delete a few
+  generations" is the recovery, not "the VPS is out of disk".
+- **Backed up off-host** daily (SQLite online backup + content-addressed assets in one
+  restic snapshot) with a restore script that refuses to overwrite a live volume.
 
 ## Quick start (no API key, no cost)
 
@@ -46,7 +52,9 @@ PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-...
 ADMIN_PASSWORD_HASH=...     # uv run python -m app.hashpw
 SESSION_SECRET=...          # python -c "import secrets;print(secrets.token_urlsafe(48))"
-DAILY_BUDGET_USD=5          # optional
+DAILY_BUDGET_USD=5          # mandatory with PROVIDER=openrouter (D5)
+FORWARDED_ALLOW_IPS=127.0.0.1   # behind a proxy: the one peer to trust, never '*'
+COOKIE_SECURE=              # empty = derive from PROVIDER (Secure + __Host- when live)
 ```
 
 With `PROVIDER=openrouter` the server refuses to boot if `SESSION_SECRET` is still the
@@ -76,14 +84,16 @@ instead of causing an outage.
    `DAILY_BUDGET_USD` is mandatory once `PROVIDER=openrouter`.
 4. Verify with runbook §6 — especially the rotating-`X-Forwarded-For` check, which is the
    one that proves the login limiter is not bypassable.
+5. Install the backup (`scripts/backup.sh` + `deploy/systemd/medialab-backup.{service,timer}`)
+   and run the restore drill in runbook §8.2. A backup that has never been restored is a
+   hypothesis, and `/data` is one SQLite file plus one directory.
 
 `--workers 1` is not a mistake — see *Constraints*. Deploys interrupt in-flight jobs;
 that is accepted, and Retry is the recovery path.
 
 **Read `docs/vps-deployment-decisions.md` before the first deploy.** It records the ingress,
-proxy-trust, cookie, disk-cap, migration and backup decisions — and, at the time of
-writing, that D4 (disk/RAM caps), D7 (Alembic) and D9 (backups) are **not implemented
-yet**.
+proxy-trust, cookie, disk-cap, migration and backup decisions, and what is still open
+(the Docker gateway address, the backup bucket, and the budget number).
 
 ## Updating the model catalogue
 
@@ -99,9 +109,14 @@ git diff app/data/models.json
 ## Tests
 
 ```bash
-cd backend && uv run pytest                  # 112 tests, no network
+cd backend && uv run pytest                  # 125 tests, no network
 cd backend && uv run pytest -m live          # one real, cheap OpenRouter call
+cd backend && uv run ruff check && uv run ruff format --check
 ```
+
+CI runs the same three plus `alembic check`, a frontend typecheck/lint/build, and a Docker
+build that boots the image and asserts `/health`, `/api/docs` → `404`, uid `10001` and a
+writable `/data` (`.github/workflows/ci.yml`).
 
 Tests use a fake provider that **records the exact payload it would have sent to
 OpenRouter**, so mapping coverage is real without spending money. Live tests are
@@ -126,6 +141,10 @@ suite needs a built frontend and a real Chrome (§`backend/tests/e2e`).
 - **The schema is migrations, not `create_all`.** Alembic, one revision, and tests that
   fail if the models drift from it. Migrations must be expand-then-contract: the
   pre-deploy step changes the schema while the previous container is still serving.
+- **Caps are enforced where the bytes are.** `MAX_UPLOAD_MB` at the upload, the 40 MiB
+  reference total at dispatch (so `retry` is covered too), and the 85% volume watermark
+  before reading a body or creating a job. `RETRY` is a new job and passes every guard a
+  new request does — including the daily budget.
 
 ## Layout
 
@@ -133,6 +152,8 @@ suite needs a built frontend and a real Chrome (§`backend/tests/e2e`).
 backend/
   app/
     main.py            app factory, SPA mount, CSRF guard, lifespan
+    config.py          settings + the startup refusals (secret, budget, proxy trust, D4 caps)
+    limits.py          disk watermark (507) and the reference-bytes body
     capabilities.py    catalogue loading + per-model request validation
     jobs.py            in-process runner, status transitions, spend
     gc.py              reference-counted retention sweep
@@ -142,6 +163,13 @@ backend/
   alembic.ini          migration config (no URL: DATA_DIR owns it)
   migrations/          one revision, "initial schema"; `alembic upgrade head` is the pre-deploy step
   scripts/gen_capabilities.py
+scripts/
+  backup.sh            SQLite online backup + restic snapshot (systemd timer)
+  restore.sh           restore a snapshot into a /data-shaped dir; refuses a live volume
+deploy/
+  cloudflared/config.yml       ingress table, in git
+  systemd/medialab-backup*     daily backup + weekly prune
+  medialab-backup.env.example  restic/B2 credentials template
 frontend/src/
   features/generate/   capability-driven form and result panel
   routes/              Login, Generate, History
