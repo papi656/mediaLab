@@ -1,0 +1,132 @@
+name: ci
+
+# What a deploy can break, checked where it is cheap. The Docker build is the
+# important job: Coolify builds from git and nothing else, so a tree that passes
+# pytest but cannot build the image is not deployable.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend (lint + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: install
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: ruff check
+        working-directory: backend
+        run: uv run ruff check .
+
+      - name: ruff format
+        working-directory: backend
+        run: uv run ruff format --check .
+
+      # No network and no money: the fake provider records the exact payload it
+      # would have sent, so `-m live` and `-m e2e` stay deselected (pyproject).
+      - name: pytest
+        working-directory: backend
+        run: uv run pytest
+
+      # Migrations are the pre-deploy step (D7); if the models have drifted from
+      # the revision, the next deploy would fail on the VPS instead of here.
+      - name: alembic drift
+        working-directory: backend
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+        env:
+          DATA_DIR: ${{ runner.temp }}/alembic
+
+  frontend:
+    name: frontend (typecheck + lint + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - working-directory: frontend
+        run: npm ci
+
+      - working-directory: frontend
+        run: npm run typecheck
+
+      - working-directory: frontend
+        run: npm run lint
+
+      - working-directory: frontend
+        run: npm run build
+
+  image:
+    name: docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: build (same Dockerfile Coolify uses)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: medialab:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: boots, migrates, and answers /health
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/data"
+          docker run -d --name medialab-ci \
+            -p 127.0.0.1:18000:8000 \
+            -v "$RUNNER_TEMP/data:/data" \
+            -e PROVIDER=fake \
+            -e ADMIN_PASSWORD=ci \
+            -e DATA_DIR=/data \
+            -e STATIC_DIR=/app/static \
+            medialab:ci
+          trap 'docker logs medialab-ci || true; docker rm -f medialab-ci' EXIT
+
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:18000/health > /tmp/health.json; then break; fi
+            sleep 0.5
+          done
+          cat /tmp/health.json
+          python3 - <<'PY'
+          import json
+          body = json.load(open("/tmp/health.json"))
+          assert body["status"] == "ok", body
+          assert body["database"] is True, body
+          assert body["provider"] == "fake", body
+          assert body["models"] > 0, body
+          PY
+          # The SPA is mounted from the image, not from the build context.
+          curl -fsS http://127.0.0.1:18000/ | head -c 200
+          # D10: the API map stays closed.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18000/api/docs)" = "404"
+          # D6: not root, and the volume is writable.
+          test "$(docker exec medialab-ci id -u)" = "10001"
+          docker exec medialab-ci touch /data/probe
