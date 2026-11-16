@@ -1,0 +1,13 @@
+[Unit]
+Description=Daily mediaLab backup; weekly prune
+Documentation=file:///opt/medialab/docs/vps-runbook.md
+
+[Timer]
+# 03:20 UTC, after the nightly OpenRouter usage window has rolled over and well
+# before the 6-hour GC interval is likely to be mid-run.
+OnCalendar=*-*-* 03:20:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

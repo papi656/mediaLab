@@ -1,0 +1,17 @@
+[Unit]
+Description=mediaLab backup prune (rewrites pack files; weekly)
+Documentation=file:///opt/medialab/docs/vps-runbook.md
+After=medialab-backup.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/medialab/backup.env
+# `forget` runs with every backup; `prune` is the expensive half (it rewrites pack
+# files and costs object-store transactions), so it is weekly rather than nightly.
+Environment=PRUNE=1
+ExecStart=/opt/medialab/scripts/backup.sh
+Nice=19
+IOSchedulingClass=idle
+Restart=no
+TimeoutStartSec=4h

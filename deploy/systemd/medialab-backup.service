@@ -1,0 +1,20 @@
+[Unit]
+Description=mediaLab off-host backup (SQLite online backup + assets, restic)
+Documentation=file:///opt/medialab/docs/vps-runbook.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Runs as root: it reads /srv/medialab/data (uid 10001) and restic's credentials.
+# Nothing it does needs write access to the data volume.
+User=root
+EnvironmentFile=/etc/medialab/backup.env
+ExecStart=/opt/medialab/scripts/backup.sh
+# A backup that runs while the volume is being written is fine (SQLite's online
+# backup API handles it), but two at once are not: the script takes a lock.
+Nice=10
+IOSchedulingClass=idle
+# Do not retry in a tight loop: a failure here is usually credentials or network.
+Restart=no
+TimeoutStartSec=2h

@@ -1,0 +1,12 @@
+[Unit]
+Description=Weekly mediaLab backup prune
+Documentation=file:///opt/medialab/docs/vps-runbook.md
+
+[Timer]
+# Sunday 04:20 UTC: an hour after the nightly backup, so they never overlap.
+OnCalendar=Sun *-*-* 04:20:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target
