@@ -25,5 +25,9 @@ dist/
 playwright-report/
 test-results/
 
-# Runtime data (sqlite, generated assets, model cache)
-data/
+# Runtime data (sqlite, generated assets, model cache).
+# ANCHORED on purpose: a bare `data/` also matches `backend/app/data/`, which holds the
+# committed model catalogue (app/data/models.json). Ignoring that made every fresh
+# clone unbootable — CI found it, because the agent's working tree had the file.
+/data/
+/backend/data/

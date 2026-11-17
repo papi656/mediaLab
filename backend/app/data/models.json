@@ -1,0 +1,3457 @@
+{
+  "generated_at": "2026-11-02T15:20:21Z",
+  "source": "https://openrouter.ai/api/v1/images/models",
+  "models": [
+    {
+      "id": "black-forest-labs/flux-3-image",
+      "name": "Black Forest Labs: FLUX 3 Image",
+      "description": "FLUX.3 Image is Black Forest Labs' flagship image generation and editing model. It handles text-to-image and multi-reference editing with up to 10 input images, and renders at fixed resolution tiers...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 10,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "768",
+        "1K",
+        "1.5K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "21:9",
+        "2:1",
+        "16:9",
+        "3:2",
+        "7:5",
+        "4:3",
+        "5:4",
+        "1:1",
+        "4:5",
+        "3:4",
+        "5:7",
+        "2:3",
+        "9:16",
+        "1:2",
+        "9:21",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "grounding",
+        "safety_tolerance",
+        "version"
+      ],
+      "provider_tags": [
+        "black-forest-labs"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.041
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.048
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.07
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.1
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.607
+        }
+      ]
+    },
+    {
+      "id": "black-forest-labs/flux-3-image-klein",
+      "name": "Black Forest Labs: FLUX 3 Image Klein",
+      "description": "FLUX 3 Image Klein is an open-weights image generation and editing model from Black Forest Labs. It is suited for text-to-image, multi-reference editing that keeps characters and subjects consistent across...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 10,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "768",
+        "1K",
+        "1.5K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "21:9",
+        "2:1",
+        "16:9",
+        "3:2",
+        "7:5",
+        "4:3",
+        "5:4",
+        "1:1",
+        "4:5",
+        "3:4",
+        "5:7",
+        "2:3",
+        "9:16",
+        "1:2",
+        "9:21",
+        "auto"
+      ],
+      "formats": [
+        "jpeg",
+        "png"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "safety_tolerance",
+        "steps"
+      ],
+      "provider_tags": [
+        "black-forest-labs"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.008
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.009
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.011
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.014
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.036
+        }
+      ]
+    },
+    {
+      "id": "black-forest-labs/flux.2-flex",
+      "name": "Black Forest Labs: FLUX.2 Flex",
+      "description": "FLUX.2 [flex] excels at rendering complex text, typography, and fine details, and supports multi-reference editing in the same unified architecture. Pricing is as follows, [per the docs](https://bfl.ai/pricing?category=flux.2): We charge $0.06...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 8,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "guidance",
+        "prompt_upsampling",
+        "safety_tolerance",
+        "steps"
+      ],
+      "provider_tags": [
+        "black-forest-labs/us-3"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "megapixel",
+          "cost_usd": 0.06
+        },
+        {
+          "billable": "output_image",
+          "unit": "megapixel",
+          "cost_usd": 0.06
+        }
+      ]
+    },
+    {
+      "id": "black-forest-labs/flux.2-klein-4b",
+      "name": "Black Forest Labs: FLUX.2 Klein 4B",
+      "description": "FLUX.2 [klein] 4B is the fastest and most cost-effective model in the FLUX.2 family, optimized for high-throughput use cases while maintaining excellent image quality. Pricing is based on the output...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 4,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "guidance",
+        "safety_tolerance",
+        "steps"
+      ],
+      "provider_tags": [
+        "black-forest-labs"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "megapixel",
+          "cost_usd": 0.014
+        }
+      ]
+    },
+    {
+      "id": "black-forest-labs/flux.2-max",
+      "name": "Black Forest Labs: FLUX.2 Max",
+      "description": "FLUX.2 [max] is the new top-tier image model from Black Forest Labs, pushing image quality, prompt understanding, and editing consistency to the highest level yet. Pricing is as follows, [per...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 8,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "disable_pup",
+        "guidance",
+        "safety_tolerance",
+        "steps"
+      ],
+      "provider_tags": [
+        "black-forest-labs/us-3"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "megapixel",
+          "cost_usd": 0.07
+        }
+      ]
+    },
+    {
+      "id": "black-forest-labs/flux.2-pro",
+      "name": "Black Forest Labs: FLUX.2 Pro",
+      "description": "A high-end image generation and editing model focused on frontier-level visual quality and reliability. It delivers strong prompt adherence, stable lighting, sharp textures, and consistent character/style reproduction across multi-reference inputs....",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 8,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [
+        "png",
+        "jpeg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "disable_pup",
+        "guidance",
+        "safety_tolerance",
+        "steps"
+      ],
+      "provider_tags": [
+        "black-forest-labs"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "megapixel",
+          "cost_usd": 0.03
+        }
+      ]
+    },
+    {
+      "id": "bytedance-seed/seedream-4.5",
+      "name": "ByteDance Seed: Seedream 4.5",
+      "description": "Seedream 4.5 is the latest in-house image generation model developed by ByteDance. Compared with Seedream 4.0, it delivers comprehensive improvements, especially in editing consistency, including better preservation of subject details,...",
+      "input_modalities": [
+        "image",
+        "text"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 10
+      },
+      "resolutions": [
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:2",
+        "2:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9",
+        "9:19.5",
+        "19.5:9",
+        "9:20",
+        "20:9",
+        "9:21",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "seed"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.04
+        },
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0
+        }
+      ]
+    },
+    {
+      "id": "bytedance-seed/seedream-5-0-flash",
+      "name": "ByteDance Seed: Seedream 5.0 Flash",
+      "description": "Seedream 5.0 Flash is an image generation and editing model from ByteDance Seed. It is the fast, cost-efficient tier of the Seedream 5.0 family, suited for high-volume production and interactive...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:2",
+        "2:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9",
+        "9:19.5",
+        "19.5:9",
+        "9:20",
+        "20:9",
+        "9:21",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "seed"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.018
+        },
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0
+        }
+      ]
+    },
+    {
+      "id": "bytedance-seed/seedream-5-0-lite",
+      "name": "ByteDance Seed: Seedream 5.0 Lite",
+      "description": "Seedream 5.0 Lite is an image generation model from ByteDance Seed. It is suited for professional visual creation that benefits from web-connected retrieval, complex-prompt comprehension, visual references, and broad knowledge...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 4
+      },
+      "resolutions": [
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:2",
+        "2:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9",
+        "9:19.5",
+        "19.5:9",
+        "9:20",
+        "20:9",
+        "9:21",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "seed"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.035
+        },
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0
+        }
+      ]
+    },
+    {
+      "id": "bytedance-seed/seedream-5-0-pro",
+      "name": "ByteDance Seed: Seedream 5.0 Pro",
+      "description": "Seedream 5.0 Pro is an image generation and editing model from ByteDance Seed. It is suited for commercial visual-production workflows that require precise editing control, lifelike scenes, and natural rendering.",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:2",
+        "2:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9",
+        "9:19.5",
+        "19.5:9",
+        "9:20",
+        "20:9",
+        "9:21",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "seed"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.045
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.09
+        },
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0.003
+        }
+      ]
+    },
+    {
+      "id": "google/gemini-2.5-flash-image",
+      "name": "Google: Nano Banana (Gemini 2.5 Flash Image)",
+      "description": "Gemini 2.5 Flash Image, a.k.a. \"Nano Banana,\" is now generally available. It is a state of the art image generation model with contextual understanding. It is capable of image generation,...",
+      "input_modalities": [
+        "image",
+        "text"
+      ],
+      "max_refs": 3,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9",
+        "21:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "cachedContent"
+      ],
+      "provider_tags": [
+        "google-vertex/global"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 3e-07
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 3e-05
+        }
+      ]
+    },
+    {
+      "id": "google/gemini-3-pro-image",
+      "name": "Google: Nano Banana Pro (Gemini 3 Pro Image)",
+      "description": "Nano Banana Pro is Google’s most advanced image-generation and editing model, built on Gemini 3 Pro. It extends the original Nano Banana with significantly improved multimodal reasoning, real-world grounding, and...",
+      "input_modalities": [
+        "image",
+        "text"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9",
+        "21:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "cachedContent"
+      ],
+      "provider_tags": [
+        "google-ai-studio/global",
+        "google-vertex/global"
+      ],
+      "endpoint_count": 2,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 2e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 0.00012
+        }
+      ]
+    },
+    {
+      "id": "google/gemini-3-pro-image-preview",
+      "name": "Google: Nano Banana Pro (Gemini 3 Pro Image Preview)",
+      "description": "Nano Banana Pro is Google’s most advanced image-generation and editing model, built on Gemini 3 Pro. It extends the original Nano Banana with significantly improved multimodal reasoning, real-world grounding, and...",
+      "input_modalities": [
+        "image",
+        "text"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9",
+        "21:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "cachedContent"
+      ],
+      "provider_tags": [
+        "google-ai-studio/global",
+        "google-ai-studio/global/flex"
+      ],
+      "endpoint_count": 2,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 1e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 6e-05
+        },
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 2e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 0.00012
+        }
+      ]
+    },
+    {
+      "id": "google/gemini-3.1-flash-image",
+      "name": "Google: Nano Banana 2 (Gemini 3.1 Flash Image)",
+      "description": "Gemini 3.1 Flash Image, a.k.a. \"Nano Banana 2,\" is Google’s latest state of the art image generation and editing model, delivering Pro-level visual quality at Flash speed. It combines advanced...",
+      "input_modalities": [
+        "image",
+        "text"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "512",
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:4",
+        "1:8",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:1",
+        "4:3",
+        "4:5",
+        "5:4",
+        "8:1",
+        "9:16",
+        "16:9",
+        "21:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "cachedContent"
+      ],
+      "provider_tags": [
+        "google-ai-studio",
+        "google-vertex/global",
+        "google-vertex/us"
+      ],
+      "endpoint_count": 3,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 6.6e-05
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 6e-05
+        }
+      ]
+    },
+    {
+      "id": "google/gemini-3.1-flash-image-preview",
+      "name": "Google: Nano Banana 2 (Gemini 3.1 Flash Image Preview)",
+      "description": "Gemini 3.1 Flash Image Preview, a.k.a. \"Nano Banana 2,\" is Google’s latest state of the art image generation and editing model, delivering Pro-level visual quality at Flash speed. It combines...",
+      "input_modalities": [
+        "image",
+        "text"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "512",
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:4",
+        "1:8",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:1",
+        "4:3",
+        "4:5",
+        "5:4",
+        "8:1",
+        "9:16",
+        "16:9",
+        "21:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "cachedContent"
+      ],
+      "provider_tags": [
+        "google-ai-studio"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 6e-05
+        }
+      ]
+    },
+    {
+      "id": "google/gemini-3.1-flash-lite-image",
+      "name": "Google: Nano Banana 2 Lite (Gemini 3.1 Flash Lite Image)",
+      "description": "Nano Banana 2 Lite (Gemini 3.1 Flash Lite Image) is Google's fastest, most cost-efficient Gemini image model, built for high-velocity developer pipelines and rapid-fire visual exploration. It delivers text-to-image generation...",
+      "input_modalities": [
+        "image",
+        "text"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:4",
+        "1:8",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:1",
+        "4:3",
+        "4:5",
+        "5:4",
+        "8:1",
+        "9:16",
+        "16:9",
+        "21:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "cachedContent"
+      ],
+      "provider_tags": [
+        "google-ai-studio",
+        "google-vertex/global"
+      ],
+      "endpoint_count": 2,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 3e-05
+        }
+      ]
+    },
+    {
+      "id": "google/gemini-nano-banana-2.1",
+      "name": "Google: Nano Banana 2.1",
+      "description": "Nano Banana 2.1 (Gemini Nano Banana 2.1) is Google's image generation and editing model on the Flash tier, succeeding Nano Banana 2 and Nano Banana Pro. It improves product recontextualization,...",
+      "input_modalities": [
+        "image",
+        "text"
+      ],
+      "max_refs": 14,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:4",
+        "1:8",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:1",
+        "4:3",
+        "4:5",
+        "5:4",
+        "8:1",
+        "9:16",
+        "16:9",
+        "21:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "cachedContent"
+      ],
+      "provider_tags": [
+        "google-ai-studio"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 3e-05
+        }
+      ]
+    },
+    {
+      "id": "krea/k3-edit",
+      "name": "Krea: K3 Edit",
+      "description": "Krea K3 Edit is an image-to-image editing model from Krea. It takes one to eight reference images plus a text prompt and returns a single edited image, following instructions that...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 8,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:2",
+        "16:9",
+        "4:5",
+        "2:3",
+        "9:16"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "preserve_references",
+        "skip_prompt_expansion",
+        "thinking_mode"
+      ],
+      "provider_tags": [
+        "krea"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.03
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.06
+        },
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0.02
+        },
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0.07
+        },
+        {
+          "billable": "output_image",
+          "unit": "request",
+          "cost_usd": 0.02
+        }
+      ]
+    },
+    {
+      "id": "krea/krea-2-large",
+      "name": "Krea: Krea 2 Large",
+      "description": "Krea 2 Large is Krea's high-capability image generation model, more than twice the size of Krea 2 Medium. Its lighter post-training gives images a rawer, more textured, and flexible character,...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:2",
+        "16:9",
+        "4:5",
+        "2:3",
+        "9:16"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "complexity",
+        "creativity",
+        "image_style_references",
+        "intensity",
+        "moodboards",
+        "movement",
+        "strength",
+        "styles"
+      ],
+      "provider_tags": [
+        "krea"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.06
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.065
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.07
+        }
+      ]
+    },
+    {
+      "id": "krea/krea-2-medium",
+      "name": "Krea: Krea 2 Medium",
+      "description": "Krea 2 Medium is Krea's balanced, cost-efficient image generation model and a practical starting point for a broad range of use cases. Its extensive post-training supports stable, consistent generations, with...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:2",
+        "16:9",
+        "4:5",
+        "2:3",
+        "9:16"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "complexity",
+        "creativity",
+        "image_style_references",
+        "intensity",
+        "moodboards",
+        "movement",
+        "strength",
+        "styles"
+      ],
+      "provider_tags": [
+        "krea"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.03
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.035
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.04
+        }
+      ]
+    },
+    {
+      "id": "krea/krea-2-medium-turbo",
+      "name": "Krea: Krea 2 Medium Turbo",
+      "description": "Krea 2 Medium Turbo is a distilled, speed-focused variant of Krea 2 Medium from Krea. It is designed for rapid iteration and graphic design exploration where fast generation is the...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:2",
+        "16:9",
+        "4:5",
+        "2:3",
+        "9:16"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "complexity",
+        "creativity",
+        "image_style_references",
+        "intensity",
+        "moodboards",
+        "movement",
+        "strength",
+        "styles"
+      ],
+      "provider_tags": [
+        "krea"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.015
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.0175
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.02
+        }
+      ]
+    },
+    {
+      "id": "microsoft/mai-image-2.5",
+      "name": "Microsoft AI: MAI-Image-2.5",
+      "description": "Microsoft AI's MAI-Image-2.5 is a high-quality image generation model available via Azure AI Foundry. It produces photorealistic and artistic images from text prompts with support for various aspect ratios.",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "3:2",
+        "2:3",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "azure"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_text",
+          "unit": "token",
+          "cost_usd": 5e-06
+        },
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 8e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 4.7e-05
+        }
+      ]
+    },
+    {
+      "id": "microsoft/mai-image-2.5-pro",
+      "name": "Microsoft AI: MAI-Image-2.5 Pro",
+      "description": "Microsoft AI's MAI-Image-2.5 is a high-quality image generation model available via Azure AI Foundry. It produces photorealistic and artistic images from text prompts with support for various aspect ratios.",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "3:2",
+        "2:3",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "azure"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_text",
+          "unit": "token",
+          "cost_usd": 5e-06
+        },
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 8e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 0.000108
+        }
+      ]
+    },
+    {
+      "id": "microsoft/mai-image-2.6",
+      "name": "Microsoft AI: MAI-Image-2.6",
+      "description": "MAI-Image-2.6 is an image generation and editing model from Microsoft AI, the precision tier of the MAI-Image-2.6 family alongside the faster [MAI-Image-2.6 Flash](/microsoft/mai-image-2.6-flash). It is suited for design-ready visuals and...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 5,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "3:2",
+        "2:3",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "web_grounding"
+      ],
+      "provider_tags": [
+        "azure"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_text",
+          "unit": "token",
+          "cost_usd": 5e-06
+        },
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 8e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 3.8e-05
+        }
+      ]
+    },
+    {
+      "id": "microsoft/mai-image-2.6-flash",
+      "name": "Microsoft AI: MAI-Image-2.6 Flash",
+      "description": "MAI-Image-2.6 Flash is the lower-latency, lower-cost member of the [MAI-Image-2.6](/microsoft/mai-image-2.6) family from Microsoft AI, built for latency-sensitive, high-throughput production image generation and editing at comparable quality to the precision tier....",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 5,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "3:2",
+        "2:3",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "web_grounding"
+      ],
+      "provider_tags": [
+        "azure"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_text",
+          "unit": "token",
+          "cost_usd": 1.75e-06
+        },
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 2.5e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 1.9e-05
+        }
+      ]
+    },
+    {
+      "id": "openai/gpt-5-image",
+      "name": "OpenAI: GPT-5 Image",
+      "description": "[GPT-5](https://openrouter.ai/openai/gpt-5) Image combines OpenAI's GPT-5 model with state-of-the-art image generation capabilities. It offers major improvements in reasoning, code quality, and user experience while incorporating GPT Image 1's superior instruction following,...",
+      "input_modalities": [
+        "image",
+        "text",
+        "file"
+      ],
+      "max_refs": 16,
+      "n": {
+        "min": 1,
+        "max": 10
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "3:2",
+        "2:3",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [
+        "auto",
+        "transparent",
+        "opaque"
+      ],
+      "qualities": [
+        "auto",
+        "low",
+        "medium",
+        "high"
+      ],
+      "supports_compression": true,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "moderation"
+      ],
+      "provider_tags": [
+        "openai"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 1e-05
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 4e-05
+        }
+      ]
+    },
+    {
+      "id": "openai/gpt-5-image-mini",
+      "name": "OpenAI: GPT-5 Image Mini",
+      "description": "GPT-5 Image Mini combines OpenAI's advanced language capabilities, powered by [GPT-5 Mini](https://openrouter.ai/openai/gpt-5-mini), with GPT Image 1 Mini for efficient image generation. This natively multimodal model features superior instruction following, text...",
+      "input_modalities": [
+        "file",
+        "image",
+        "text"
+      ],
+      "max_refs": 16,
+      "n": {
+        "min": 1,
+        "max": 10
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "3:2",
+        "2:3",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [
+        "auto",
+        "transparent",
+        "opaque"
+      ],
+      "qualities": [
+        "auto",
+        "low",
+        "medium",
+        "high"
+      ],
+      "supports_compression": true,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "moderation"
+      ],
+      "provider_tags": [
+        "openai"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 2.5e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 8e-06
+        }
+      ]
+    },
+    {
+      "id": "openai/gpt-5.4-image-2",
+      "name": "OpenAI: GPT-5.4 Image 2",
+      "description": "[GPT-5.4](https://openrouter.ai/openai/gpt-5.4) Image 2 combines OpenAI's GPT-5.4 model with state-of-the-art image generation capabilities from GPT Image 2. It enables rich multimodal workflows, allowing users to seamlessly move between reasoning, coding, and...",
+      "input_modalities": [
+        "image",
+        "text",
+        "file"
+      ],
+      "max_refs": 16,
+      "n": {
+        "min": 1,
+        "max": 10
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "3:2",
+        "2:3",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [
+        "auto",
+        "opaque"
+      ],
+      "qualities": [
+        "auto",
+        "low",
+        "medium",
+        "high"
+      ],
+      "supports_compression": true,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "moderation"
+      ],
+      "provider_tags": [
+        "openai"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 8e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 3e-05
+        }
+      ]
+    },
+    {
+      "id": "openai/gpt-image-1",
+      "name": "OpenAI: GPT Image 1",
+      "description": "OpenAI's GPT Image 1 generates and edits images via the dedicated Images API. Features accurate text rendering, transparent backgrounds, and up to 16 reference images for edits.",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 16,
+      "n": {
+        "min": 1,
+        "max": 10
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "3:2",
+        "2:3",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [
+        "auto",
+        "transparent",
+        "opaque"
+      ],
+      "qualities": [
+        "auto",
+        "low",
+        "medium",
+        "high"
+      ],
+      "supports_compression": true,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "moderation"
+      ],
+      "provider_tags": [
+        "openai"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 1e-05
+        },
+        {
+          "billable": "input_text",
+          "unit": "token",
+          "cost_usd": 5e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 4e-05
+        }
+      ]
+    },
+    {
+      "id": "openai/gpt-image-1-mini",
+      "name": "OpenAI: GPT Image 1 Mini",
+      "description": "A cost-efficient variant of GPT Image 1 for high-quality image generation at reduced latency and cost via OpenAI's dedicated Images API.",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 16,
+      "n": {
+        "min": 1,
+        "max": 10
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "3:2",
+        "2:3",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [
+        "auto",
+        "transparent",
+        "opaque"
+      ],
+      "qualities": [
+        "auto",
+        "low",
+        "medium",
+        "high"
+      ],
+      "supports_compression": true,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "moderation"
+      ],
+      "provider_tags": [
+        "openai"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 2.5e-06
+        },
+        {
+          "billable": "input_text",
+          "unit": "token",
+          "cost_usd": 2e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 8e-06
+        }
+      ]
+    },
+    {
+      "id": "openai/gpt-image-2",
+      "name": "OpenAI: GPT Image 2",
+      "description": "OpenAI's latest image generation model. Supports high-fidelity image generation and editing via the dedicated Images API.",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 16,
+      "n": {
+        "min": 1,
+        "max": 10
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "3:2",
+        "2:3",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [
+        "auto",
+        "opaque"
+      ],
+      "qualities": [
+        "auto",
+        "low",
+        "medium",
+        "high"
+      ],
+      "supports_compression": true,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "moderation"
+      ],
+      "provider_tags": [
+        "openai"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 8e-06
+        },
+        {
+          "billable": "input_text",
+          "unit": "token",
+          "cost_usd": 5e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 3e-05
+        }
+      ]
+    },
+    {
+      "id": "openai/gpt-image-2.5-flare",
+      "name": "OpenAI: GPT Image 2.5 Flare",
+      "description": "GPT Image 2.5 Flare is an image generation and editing model from OpenAI, positioned as the speed-oriented tier of the GPT Image 2.5 series. It is suited to high-volume everyday...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 16,
+      "n": {
+        "min": 1,
+        "max": 10
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "3:2",
+        "2:3",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [
+        "auto",
+        "transparent",
+        "opaque"
+      ],
+      "qualities": [
+        "auto",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "supports_compression": true,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "moderation"
+      ],
+      "provider_tags": [
+        "openai"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 8e-06
+        },
+        {
+          "billable": "input_text",
+          "unit": "token",
+          "cost_usd": 5e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 3e-05
+        }
+      ]
+    },
+    {
+      "id": "openai/gpt-image-2.5-sunburst",
+      "name": "OpenAI: GPT Image 2.5 Sunburst",
+      "description": "GPT Image 2.5 Sunburst is an image generation and editing model from OpenAI, positioned as the precision-oriented tier of the GPT Image 2.5 series. It is suited to detailed creative...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 16,
+      "n": {
+        "min": 1,
+        "max": 10
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "3:2",
+        "2:3",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [
+        "auto",
+        "transparent",
+        "opaque"
+      ],
+      "qualities": [
+        "auto",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "supports_compression": true,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "moderation"
+      ],
+      "provider_tags": [
+        "openai"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "token",
+          "cost_usd": 8e-06
+        },
+        {
+          "billable": "input_text",
+          "unit": "token",
+          "cost_usd": 5e-06
+        },
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 3e-05
+        }
+      ]
+    },
+    {
+      "id": "qwen/qwen-image-2.1-pro",
+      "name": "Qwen: Qwen Image 2.1 Pro",
+      "description": "Qwen Image 2.1 Pro is an image generation and editing model from Qwen, the higher-quality tier of the Qwen Image 2.1 series. Choose it over Qwen Image 2.1 Turbo when...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 4,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [
+        "1K",
+        "2K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:2",
+        "1:4",
+        "2:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:1",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "alibaba"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.046
+        }
+      ]
+    },
+    {
+      "id": "qwen/qwen-image-2.1-turbo",
+      "name": "Qwen: Qwen Image 2.1 Turbo",
+      "description": "Qwen Image 2.1 Turbo is the fast, lower-cost tier of the Qwen Image 2.1 series from Qwen, for image generation and editing where throughput and price matter more than peak...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 4,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [
+        "1K",
+        "2K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:2",
+        "1:4",
+        "2:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:1",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "alibaba"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.0184
+        }
+      ]
+    },
+    {
+      "id": "qwen/qwen-image-3",
+      "name": "Qwen: Qwen Image 3",
+      "description": "Qwen Image 3 is a unified image generation and editing model from Qwen. It supports precise rendering of text and details as small as 10px, along with a richer world...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 3,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [
+        "1K",
+        "2K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:2",
+        "1:4",
+        "2:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:1",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "alibaba"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0.003
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.03
+        }
+      ]
+    },
+    {
+      "id": "qwen/qwen-image-3-pro",
+      "name": "Qwen: Qwen Image 3 Pro",
+      "description": "Qwen Image 3 Pro is an image generation and editing model from Qwen. It supports precise rendering of text and details as small as 10px, along with richer world knowledge...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 3,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [
+        "1K",
+        "2K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:2",
+        "1:4",
+        "2:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:1",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "alibaba"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0.003
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.04
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.075
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v3",
+      "name": "Recraft: Recraft V3",
+      "description": "Recraft V3 is an image generation model from Recraft. It supports text and image inputs with image output at ~1K resolution across multiple aspect ratios. Supports the following `image_config` parameters:...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.04
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4",
+      "name": "Recraft: Recraft V4",
+      "description": "Recraft V4 is an image generation model from Recraft. It supports text and image inputs with image output at ~1K resolution across multiple aspect ratios. It delivers stronger compositional judgment,...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.04
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4-pro",
+      "name": "Recraft: Recraft V4 Pro",
+      "description": "Recraft V4 Pro is an image generation model from Recraft. It supports text and image inputs with image output at ~2K resolution across multiple aspect ratios, double the resolution of...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.25
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4-pro-vector",
+      "name": "Recraft: Recraft V4 Pro Vector",
+      "description": "Recraft V4 Pro Vector is the vector (SVG) variant of Recraft V4 Pro. It supports text and image inputs and produces vector image output across multiple aspect ratios at the...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [
+        "svg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.3
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4-styles",
+      "name": "Recraft: Recraft V4 Styles",
+      "description": "Recraft V4 Styles is a style-consistent image generation model from Recraft. Every request requires at least one style reference image and generates a new image that reproduces the reference's rendering...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 10,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "2:1",
+        "1:2",
+        "3:2",
+        "2:3",
+        "4:3",
+        "3:4",
+        "5:4",
+        "4:5",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "random_seed",
+        "style_id",
+        "style_match"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.035
+        },
+        {
+          "billable": "input_reference",
+          "unit": "request",
+          "cost_usd": 0.005
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4-styles-pro",
+      "name": "Recraft: Recraft V4 Styles Pro",
+      "description": "Recraft V4 Styles Pro is a style-consistent image generation model from Recraft. Every request requires at least one style reference image and generates a new image that reproduces the reference's...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 10,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "2:1",
+        "1:2",
+        "3:2",
+        "2:3",
+        "4:3",
+        "3:4",
+        "5:4",
+        "4:5",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "random_seed",
+        "style_id",
+        "style_match"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.1
+        },
+        {
+          "billable": "input_reference",
+          "unit": "request",
+          "cost_usd": 0.005
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4-styles-pro-vector",
+      "name": "Recraft: Recraft V4 Styles Pro Vector",
+      "description": "Recraft V4 Styles Pro Vector is a style-consistent image generation model from Recraft. Every request requires at least one style reference image and generates a new image that reproduces the...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 10,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "2:1",
+        "1:2",
+        "3:2",
+        "2:3",
+        "4:3",
+        "3:4",
+        "5:4",
+        "4:5",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [
+        "svg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "random_seed",
+        "style_id",
+        "style_match"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.12
+        },
+        {
+          "billable": "input_reference",
+          "unit": "request",
+          "cost_usd": 0.005
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4-styles-vector",
+      "name": "Recraft: Recraft V4 Styles Vector",
+      "description": "Recraft V4 Styles Vector is a style-consistent image generation model from Recraft. Every request requires at least one style reference image and generates a new image that reproduces the reference's...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 10,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "2:1",
+        "1:2",
+        "3:2",
+        "2:3",
+        "4:3",
+        "3:4",
+        "5:4",
+        "4:5",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [
+        "svg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "random_seed",
+        "style_id",
+        "style_match"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.05
+        },
+        {
+          "billable": "input_reference",
+          "unit": "request",
+          "cost_usd": 0.005
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4-vector",
+      "name": "Recraft: Recraft V4 Vector",
+      "description": "Recraft V4 Vector is the vector (SVG) variant of Recraft V4. It supports text and image inputs and produces vector image output across multiple aspect ratios. Compared to the raster...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [
+        "svg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.08
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4.1",
+      "name": "Recraft: Recraft V4.1",
+      "description": "Recraft V4.1 is an image generation model from Recraft tuned for high aesthetics. It supports text and image inputs with image output at ~1K resolution across multiple aspect ratios, with...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.035
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4.1-flash",
+      "name": "Recraft: Recraft V4.1 Flash",
+      "description": "Recraft V4.1 Flash is a text-to-image model from Recraft, the speed and cost tier of the V4.1 family. It generates ~1K raster images in about 1.5 seconds end to end,...",
+      "input_modalities": [
+        "text"
+      ],
+      "max_refs": 0,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.007
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4.1-pro",
+      "name": "Recraft: Recraft V4.1 Pro",
+      "description": "Recraft V4.1 Pro is an image generation model from Recraft tuned for high aesthetics. It supports text and image inputs with image output at ~2K resolution across multiple aspect ratios...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.21
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4.1-pro-vector",
+      "name": "Recraft: Recraft V4.1 Pro Vector",
+      "description": "Recraft V4.1 Pro Vector is the vector (SVG) variant of Recraft V4.1 Pro, tuned for high aesthetics. It supports text and image inputs and produces higher-resolution SVG image output across...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [
+        "svg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.3
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4.1-utility",
+      "name": "Recraft: Recraft V4.1 Utility",
+      "description": "Recraft V4.1 Utility is a general-purpose image generation model from Recraft. It supports text and image inputs with image output at ~1K resolution across multiple aspect ratios, with typical generation...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.035
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4.1-utility-pro",
+      "name": "Recraft: Recraft V4.1 Utility Pro",
+      "description": "Recraft V4.1 Utility Pro is a general-purpose image generation model from Recraft. It supports text and image inputs with image output at ~2K resolution across multiple aspect ratios — double...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.21
+        }
+      ]
+    },
+    {
+      "id": "recraft/recraft-v4.1-vector",
+      "name": "Recraft: Recraft V4.1 Vector",
+      "description": "Recraft V4.1 Vector is the vector (SVG) variant of Recraft V4.1, tuned for high aesthetics. It supports text and image inputs and produces SVG image output across multiple aspect ratios,...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 1,
+      "n": {
+        "min": 1,
+        "max": 6
+      },
+      "resolutions": [],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "16:9",
+        "9:16",
+        "auto"
+      ],
+      "formats": [
+        "svg"
+      ],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "controls",
+        "style",
+        "text_layout"
+      ],
+      "provider_tags": [
+        "recraft"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.08
+        }
+      ]
+    },
+    {
+      "id": "sourceful/riverflow-v2-fast",
+      "name": "Sourceful: Riverflow V2 Fast",
+      "description": "Riverflow V2 Fast is the fastest variant of Sourceful's Riverflow 2.0 lineup, best for production deployments and latency-critical workflows. The Riverflow 2.0 series represents SOTA performance on image generation and...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 4,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "font_inputs"
+      ],
+      "provider_tags": [
+        "sourceful"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.02
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.04
+        },
+        {
+          "billable": "input_font",
+          "unit": "image",
+          "cost_usd": 0.03
+        },
+        {
+          "billable": "input_reference",
+          "unit": "image",
+          "cost_usd": 0.2
+        }
+      ]
+    },
+    {
+      "id": "sourceful/riverflow-v2-pro",
+      "name": "Sourceful: Riverflow V2 Pro",
+      "description": "Riverflow V2 Pro is the most powerful variant of Sourceful's Riverflow 2.0 lineup, best for top-tier control and perfect text rendering. The Riverflow 2.0 series represents SOTA performance on image...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 10,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "font_inputs"
+      ],
+      "provider_tags": [
+        "sourceful"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.15
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.33
+        },
+        {
+          "billable": "input_font",
+          "unit": "image",
+          "cost_usd": 0.03
+        },
+        {
+          "billable": "input_reference",
+          "unit": "image",
+          "cost_usd": 0.2
+        }
+      ]
+    },
+    {
+      "id": "sourceful/riverflow-v2.5-fast",
+      "name": "Sourceful: Riverflow V2.5 Fast",
+      "description": "Riverflow V2.5 Fast is the speed-optimized variant of Sourceful's Riverflow 2.5 lineup, best for production deployments and latency-critical workflows. The Riverflow 2.5 series is a unified text-to-image and image-to-image family...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 4,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [
+        "jpeg"
+      ],
+      "backgrounds": [
+        "auto",
+        "transparent",
+        "opaque"
+      ],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "font_inputs"
+      ],
+      "provider_tags": [
+        "sourceful"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.019
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.021
+        }
+      ]
+    },
+    {
+      "id": "sourceful/riverflow-v2.5-pro",
+      "name": "Sourceful: Riverflow V2.5 Pro",
+      "description": "Riverflow V2.5 Pro is the most powerful variant of Sourceful's Riverflow 2.5 lineup, best for top-tier control and quality-sensitive outputs. The Riverflow 2.5 series is a unified text-to-image and image-to-image...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 10,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [
+        "png",
+        "jpeg",
+        "webp"
+      ],
+      "backgrounds": [
+        "auto",
+        "transparent",
+        "opaque"
+      ],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [
+        "font_inputs"
+      ],
+      "provider_tags": [
+        "sourceful"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.13
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.15
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.17
+        }
+      ]
+    },
+    {
+      "id": "sourceful/riverflow-v2.6-pro",
+      "name": "Sourceful: Riverflow V2.6 Pro",
+      "description": "Riverflow 2.6 Pro is the flagship model of Sourceful's Riverflow 2.6 lineup, a unified text-to-image and image-to-image family that treats generation as a production workflow: an integrated reasoning model plans...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 10,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3",
+        "5:4",
+        "4:5",
+        "16:9",
+        "9:16",
+        "21:9",
+        "auto"
+      ],
+      "formats": [
+        "png",
+        "jpeg",
+        "webp"
+      ],
+      "backgrounds": [
+        "auto",
+        "transparent",
+        "opaque"
+      ],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": true,
+      "passthrough_keys": [
+        "font_inputs"
+      ],
+      "provider_tags": [
+        "sourceful"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.13
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.15
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.17
+        }
+      ]
+    },
+    {
+      "id": "tencent/hy-image-v3.5-preview",
+      "name": "Tencent: Hy Image 3.5 Preview",
+      "description": "Hy Image 3.5 Preview is a unified image generation and editing model from Tencent. It handles text-to-image, image-to-image, and multi-turn editing through one endpoint, taking up to 20 reference images...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 20,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "1.5K",
+        "2K",
+        "4K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "1:2",
+        "1:4",
+        "2:1",
+        "2:3",
+        "3:2",
+        "3:4",
+        "4:1",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [],
+      "supports_compression": false,
+      "supports_seed": true,
+      "supports_size_flag": true,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "tencent"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "output_image",
+          "unit": "token",
+          "cost_usd": 1.6e-06
+        }
+      ]
+    },
+    {
+      "id": "x-ai/grok-imagine-image-2.0",
+      "name": "xAI: Grok Imagine Image 2.0",
+      "description": "Grok Imagine Image 2.0 is an image generation and editing model from xAI. It is suited for creating images from text prompts and editing images from references, with low and...",
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "max_refs": 3,
+      "n": {
+        "min": 1,
+        "max": 1
+      },
+      "resolutions": [
+        "1K",
+        "2K"
+      ],
+      "aspect_ratios": [
+        "1:1",
+        "3:4",
+        "4:3",
+        "9:16",
+        "16:9",
+        "2:3",
+        "3:2",
+        "9:19.5",
+        "19.5:9",
+        "9:20",
+        "20:9",
+        "1:2",
+        "2:1",
+        "auto"
+      ],
+      "formats": [],
+      "backgrounds": [],
+      "qualities": [
+        "low",
+        "medium"
+      ],
+      "supports_compression": false,
+      "supports_seed": false,
+      "supports_size_flag": false,
+      "passthrough_keys": [],
+      "provider_tags": [
+        "xai"
+      ],
+      "endpoint_count": 1,
+      "pricing": [
+        {
+          "billable": "input_image",
+          "unit": "image",
+          "cost_usd": 0.01
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.04
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.06
+        },
+        {
+          "billable": "output_image",
+          "unit": "image",
+          "cost_usd": 0.08
+        }
+      ]
+    }
+  ]
+}
