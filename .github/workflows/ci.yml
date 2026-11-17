@@ -49,6 +49,10 @@ jobs:
       - name: alembic drift
         working-directory: backend
         run: |
+          # DATA_DIR must exist: alembic.ini has no URL and env.py derives it from
+          # Settings, which does not create the directory (the image's /data is
+          # created at build time and the VPS bind mount is pre-chowned).
+          mkdir -p "$DATA_DIR"
           uv run alembic upgrade head
           uv run alembic check
         env:
@@ -99,7 +103,13 @@ jobs:
       - name: boots, migrates, and answers /health
         run: |
           set -euo pipefail
+          # The container runs as uid 10001 (D6). On a Linux runner a fresh
+          # directory is owned by `runner` (uid 1001) and mode 755, so without
+          # this chown the container cannot create medialab.db and /health would
+          # report database:false. Docker Desktop on macOS hides this by
+          # remapping ownership; GitHub's runner does not.
           mkdir -p "$RUNNER_TEMP/data"
+          sudo chown 10001:10001 "$RUNNER_TEMP/data"
           docker run -d --name medialab-ci \
             -p 127.0.0.1:18000:8000 \
             -v "$RUNNER_TEMP/data:/data" \
