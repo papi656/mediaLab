@@ -218,7 +218,15 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST https://medialab.papi656.com/ap
 # 6.9 the backup has run and the repository is not empty
 RESTIC_REPOSITORY=... RESTIC_PASSWORD_FILE=... restic snapshots --tag medialab --latest 1
 # -> one snapshot, listing medialab.db and the assets directory
+
+# 6.10 security headers are attached by the app, not by the dashboard (D13)
+curl -sSI https://medialab.papi656.com/health | grep -iE 'strict-transport|content-security|x-content-type|x-frame|referrer|permissions'
+# -> all six present; HSTS max-age=31536000; CSP contains frame-ancestors 'none'
 ```
+
+`6.10` matters because the header must survive the tunnel: if Cloudflare strips or
+rewrites one, the browser console says so on first load, which is cheaper than
+discovering it from a clickjacking report.
 
 `6.7` is what proves the pre-deployment command is wired up. If the two differ, the
 container would have refused to start (`RUN_MIGRATIONS_ON_START=0`), so a running
@@ -356,6 +364,7 @@ switch the code in a later release, drop the old column last.
 | `413` on upload | file over `MAX_UPLOAD_MB` (10) | expected; shrink the reference |
 | `422` with `limit_bytes` on a generation | this job's references total more than `MAX_REFERENCE_BYTES` (40 MiB) | use fewer/smaller references; the cap bounds the base64 (+33%) memory a single call can hold |
 | `507` on upload/generate | the volume is at `STORAGE_WATERMARK_PCT` (85%) | delete generations or wait for GC; check with `df -h /srv/medialab/data`. Do not raise the watermark to "fix" it — the last 15% is the WAL/GC headroom |
+| UI blank, console full of CSP errors | a resource is loaded from another origin (font/CDN/analytics) | either self-host it or add its origin to the CSP in `main.py` — do not remove `script-src 'self'` |
 | `medialab-backup.service` fails | restic credentials, network, or the repository was never `init`-ed | `journalctl -u medialab-backup -n 50`; test by hand with `sudo /opt/medialab/scripts/backup.sh` |
 
 ## 11. Adding a second service later

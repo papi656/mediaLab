@@ -115,6 +115,7 @@ drill with a real bucket) stay in runbook §6.8 and §8.2.
 | D10 | `/api/docs` and `/api/openapi.json` are off unless `ENABLE_DOCS=1` | ✅ done |
 | D11 | Single replica, `--workers 1`; deploys interrupt in-flight jobs (accepted v1 cost) | decided, runbook §4 |
 | D12 | Ingress is a **Cloudflare Tunnel** (host connector, ingress table in git), not Traefik | ✅ done |
+| D13 | Security headers (HSTS, CSP, nosniff, no-referrer, frame-deny) on every response | ✅ done |
 | Q1 | The Docker **gateway** address in front of the container (feeds `FORWARDED_ALLOW_IPS`) | **open** (needs the VPS) |
 | Q2 | Backup target and retention (B2 / S3 / other) | **open** |
 | Q3 | `DAILY_BUDGET_USD` value | **open** |
@@ -625,6 +626,46 @@ registered connections; `docker exec <c> id` is `uid=10001`.
 
 ---
 
+### D13 — Security headers on every response — ✅ done
+
+**Problem.** Runbook §6 already claimed `/health` returned `strict-transport-security`, but
+nothing set it: HSTS only existed if someone remembered to toggle it in the Cloudflare
+dashboard, so the claim was documentation, not behaviour. Nothing set a CSP either, so a
+single injected script could call the API as the logged-in operator (the cookie is
+`HttpOnly`, which stops *token theft*, not *same-origin abuse*), and no `X-Frame-Options`
+meant the Generate page could be framed for clickjacking.
+
+**Decision.** One middleware in `main.py` sets the headers on **every** response — the SPA
+shell, JSON, `/health`, and the early `403` the CSRF guard returns before a route runs:
+
+| Header | Value | Why |
+| --- | --- | --- |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | send unconditionally: production is HTTPS-only at the edge, and browsers ignore HSTS over plain HTTP, so local dev is unaffected |
+| `Content-Security-Policy` | `default-src 'self'` + `script-src 'self'`, `img-src 'self' data:`, `style-src 'self' 'unsafe-inline'`, `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'self'` | the built SPA is same-origin only: Vite emits hashed local assets and fonts are bundled by `@fontsource` |
+| `X-Content-Type-Options` | `nosniff` | |
+| `X-Frame-Options` | `DENY` | belt-and-braces with `frame-ancestors` |
+| `Referrer-Policy` | `no-referrer` | |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | |
+
+`style-src` keeps `'unsafe-inline'` because Radix positions popovers with inline `style`
+attributes. `script-src` does **not** — there is no inline script in `index.html` and no
+`eval` in the bundle.
+
+**Consequences.** Adding a third-party font, CDN or analytics script now requires a CSP
+change; that is the point, and the failure is visible in the browser console on the first
+load rather than silent. `'unsafe-inline'` on styles is the one deliberate relaxation.
+
+**Verify.** `tests/integration/test_ingress_hardening.py` pins the headers on `/health`
+and an API route, on the CSP directives that matter, and on the `403` path. Measured
+against the built image: all six headers present on `/health`, and a Chrome session with
+`Log.enable` through login → Generate → generated image produced **zero CSP violations**,
+with the output image loading from `/api/assets/...` under `img-src 'self'`. The same run
+reproduced the D4 `507` toast ("storage is full: delete generations…") because the local
+Docker VM disk was 99% full — the watermark path works end-to-end, it is not only a unit
+test.
+
+---
+
 ## 2. Clarified context — do not re-ask
 
 Settled before or during this review. Reopening any of these is a different conversation
@@ -735,6 +776,7 @@ the corresponding §1 row, and say so here rather than re-litigating it.
 | D10 ✅ | `main.py`, `config.py` | `ENABLE_DOCS` |
 | D11 ◐ | `Dockerfile`, runbook §4 | replica/zero-downtime off documented; interruption test still pending |
 | D12 ✅ | `deploy/cloudflared/config.yml`, `docs/vps-runbook.md` | host connector, ingress table in git |
+| D13 ✅ | `main.py`, `tests/integration/test_ingress_hardening.py`, `frontend/index.html` | one middleware for HSTS + CSP + nosniff + no-referrer + frame-deny; SPA title |
 
 Tests that now hold these decisions down (125 pass, 4 deselected):
 
@@ -885,6 +927,7 @@ Updated 2026-11-16, after D4 and D9 landed.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-17 | **D13 added; CI made runnable.** One middleware now sets HSTS, a same-origin CSP, `nosniff`, `no-referrer`, `frame-ancestors 'none'` and a `Permissions-Policy` on every response (verified in Chrome through login and a generation with zero violations; the `507` toast was reproduced on the way). Two CI defects that would have failed the first push were fixed: the `alembic` job ran against a `DATA_DIR` that did not exist (SQLite: `unable to open database file`), and the Docker job bind-mounted a runner-owned directory into a uid-10001 container, so `/health` would have reported `database:false` on Linux (Docker Desktop hides this by remapping ownership). Also: the SPA `<title>` is no longer "frontend". |
 | 2026-11-16 | **D4 and D9 implemented — the last two code gaps.** D4: `MAX_UPLOAD_MB=10`, `MAX_REFERENCE_BYTES` (40 MiB per job, enforced in `routers/generations.py` because it is a fact about stored bytes, not a model capability), `STORAGE_WATERMARK_PCT=85` with a `507` body carrying the current fill level, in `app/limits.py`; uploads guard before reading the body; **retry now runs the same dispatch guards as create**, closing a daily-budget bypass (pinned by a test); a missing reference *file* now fails as `missing_reference_asset_ids`. D9: `scripts/backup.sh` (SQLite online backup → `integrity_check` → one restic snapshot of db + assets, 7d/4w/3m, weekly prune) and `scripts/restore.sh` (restores into a `/data`-shaped dir, refuses to overwrite an existing db), with systemd units in `deploy/systemd/`. Verified locally against a real restic 0.19.1 repository: restore sha256 identical, integrity ok. Also added CI (`.github/workflows/ci.yml`: backend lint+format+pytest+`alembic check`, frontend typecheck+lint+build, Docker build + boot/smoke). Measurements in §0.2. |
 | 2026-11-05 | Created. Baseline verified against a real build; D1–D11 recorded; §2 context and §3 answers added after review, so the same questions are not asked twice. |
 | 2026-11-05 | D6: six-step no-root confirmation added. D7: migrations moved from the container entrypoint to a Coolify pre-deploy command, so a failed migration aborts the deploy instead of causing downtime; migrations are now required to be backward-compatible (expand-then-contract). Pre-Alembic local DB declared disposable — no `stamp head` path. |

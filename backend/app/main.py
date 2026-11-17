@@ -103,6 +103,39 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             response.headers.setdefault("Cache-Control", "no-store")
         return response
 
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):  # noqa: ANN001
+        """Headers that must be true for every response, including the SPA shell.
+
+        HSTS is safe to send unconditionally: production is only reachable through
+        the Cloudflare edge, and browsers ignore HSTS delivered over plain HTTP, so
+        local dev is unaffected. The CSP is written for the built SPA — Vite emits
+        same-origin hashed assets and the fonts are bundled (@fontsource), so
+        everything is 'self'; `unsafe-inline` is limited to styles because Radix
+        positions popovers with inline `style` attributes.
+        """
+        response = await call_next(request)
+        headers = response.headers
+        headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        headers.setdefault("X-Content-Type-Options", "nosniff")
+        headers.setdefault("X-Frame-Options", "DENY")
+        headers.setdefault("Referrer-Policy", "no-referrer")
+        headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; "
+            "base-uri 'none'; "
+            "object-src 'none'; "
+            "frame-ancestors 'none'; "
+            "form-action 'self'; "
+            "script-src 'self'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "font-src 'self'; "
+            "connect-src 'self'",
+        )
+        return response
+
     _log_ingress_posture(settings)
 
     for module in (auth, models, generations, assets, usage):

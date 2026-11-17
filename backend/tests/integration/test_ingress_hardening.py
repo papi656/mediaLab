@@ -120,3 +120,27 @@ def test_docs_can_be_turned_on_for_type_generation(tmp_path):
     with TestClient(app) as client:
         assert client.get("/api/docs").status_code == 200
         assert client.get("/api/openapi.json").status_code == 200
+
+
+@pytest.mark.parametrize("path", ["/health", "/api/me"])
+def test_security_headers_are_on_every_response(https_client, path):
+    response = https_client.get(path)
+    assert response.headers["strict-transport-security"] == ("max-age=31536000; includeSubDomains")
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["referrer-policy"] == "no-referrer"
+    csp = response.headers["content-security-policy"]
+    # Same-origin SPA: no remote script, no eval, and no framing of the app.
+    assert "script-src 'self'" in csp
+    assert "unsafe-eval" not in csp
+    assert "frame-ancestors 'none'" in csp
+    # Radix positions popovers with inline style attributes.
+    assert "style-src 'self' 'unsafe-inline'" in csp
+
+
+def test_security_headers_survive_a_rejected_mutation(https_client):
+    # The CSRF guard returns 403 before the route runs; headers must still be attached.
+    assert https_client.post("/api/auth/login", json={"password": PASSWORD}).status_code == 204
+    response = https_client.post("/api/generations", json={}, headers={"X-Requested-With": ""})
+    assert response.status_code == 403
+    assert response.headers["x-content-type-options"] == "nosniff"
